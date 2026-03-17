@@ -115,6 +115,22 @@ main{max-width:900px;margin:0 auto;padding:20px 16px}
 .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .tag{background:var(--azul-cl);border:1px solid var(--azul);color:var(--azul);padding:3px 9px;border-radius:4px;font-size:12px}
 
+/* ── MATERIAL BLOCKS ── */
+.material-block{margin:8px 0;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.material-header{padding:7px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;display:flex;justify-content:space-between;align-items:center}
+.material-body{padding:12px 14px;font-size:13px;line-height:1.8;white-space:pre-wrap}
+.material-context{padding:8px 14px;font-size:12px;line-height:1.6;font-style:italic;border-top:1px solid var(--border)}
+.material-source{padding:5px 14px;font-size:11px;color:var(--sub);border-top:1px solid var(--border)}
+.mat-biblia .material-header{background:#4A148C;color:#fff}
+.mat-biblia .material-body{background:#F5F0FF;color:#1A1A1A}
+.mat-biblia .material-context{background:#EDE7F6;color:#4A148C}
+.mat-libro .material-header{background:#1B3A6B;color:#fff}
+.mat-libro .material-body{background:#F0F4FC;color:#1A1A1A}
+.mat-libro .material-context{background:#DCE8F5;color:#1B3A6B}
+.mat-documento .material-header{background:#1B5E20;color:#fff}
+.mat-documento .material-body{background:#F1F8F1;color:#1A1A1A}
+.mat-documento .material-source{background:#E8F5E9;color:#1B5E20;font-style:italic}
+
 /* ── META BOX ── */
 .meta-box{background:var(--dorado-cl);border-left:4px solid var(--dorado);padding:11px 14px;
           border-radius:0 6px 6px 0;font-style:italic;font-size:13px;line-height:1.65}
@@ -297,6 +313,7 @@ const GRADOS = [
   { id: '6to', label: '6to Grado', periodos: [1,2,3,4] },
   { id: '5to', label: '5to Grado', periodos: [1,2,3,4] },
   { id: '4to', label: '4to Grado', periodos: [1,2,3,4] },
+  { id: '2do', label: '2do Grado', periodos: [1,2,3,4] },
   // { id: '3ro', label: '3ro Grado', periodos: [1,2,3,4] }, // agrega aquí
 ];
 
@@ -468,6 +485,7 @@ function renderSemanaCard(num, cfg, con){
   const cuaderno = parseJSON(con.actividades_cuaderno,[]);
   const rubrica = parseJSON(con.rubrica,null);
   const recursos = parseJSON(con.recursos,[]);
+  const materiales = parseJSON(con.materiales,[]);
   const textoBib = parseJSON(con.texto_biblico,null);
 
   return `<div class="week-card" id="semana-${num}">
@@ -494,6 +512,22 @@ function renderSemanaCard(num, cfg, con){
         ${esc(textoBib.texto||'')}
         ${textoBib.reflexion?`<div class="bible-ref">→ ${esc(textoBib.reflexion)}</div>`:''}
       </div>
+    </div>`:''}
+
+    <!-- Materiales embebidos -->
+    ${materiales&&materiales.length?`<div class="section">
+      <div class="sec-title" style="color:var(--gris)">Material de referencia</div>
+      ${materiales.map(m=>{
+        const cls = m.tipo==='biblia'?'mat-biblia':m.tipo==='libro_abierto'?'mat-libro':'mat-documento';
+        const lbl = m.tipo==='biblia'?'Texto bíblico':m.tipo==='libro_abierto'?'Libro Abierto':'Documento';
+        return \`<div class="material-block \${cls}">
+          <div class="material-header"><span>\${lbl}</span><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px">\${esc(m.titulo)}</span></div>
+          <div class="material-body">\${esc(m.texto||'')}</div>
+          \${m.contexto?\`<div class="material-context">\${esc(m.contexto)}</div>\`:''}
+          \${m.fuente?\`<div class="material-source">\${esc(m.fuente)}</div>\`:''}
+          \${m.pagina?\`<div class="material-source">Referencia: \${esc(m.pagina)}</div>\`:''}
+        </div>\`;
+      }).join('')}
     </div>`:''}
 
     <!-- Actividades (I/D/C) -->
