@@ -154,29 +154,39 @@ main{max-width:900px;margin:0 auto;padding:20px 16px}
 .btn-primary:disabled{opacity:.5;cursor:not-allowed}
 
 /* ── CONTROL PANEL ── */
-#control-screen{display:none;padding:16px}
-.control-grade-section{margin-bottom:20px}
-.control-grade-title{font-size:14px;font-weight:700;color:var(--azul);padding:8px 0;border-bottom:2px solid var(--azul-cl);margin-bottom:10px}
-.week-toggle-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
-.week-toggle-row:last-child{border-bottom:none}
-.week-info{flex:1}
-.week-info .w-title{font-size:13px;font-weight:600}
-.week-info .w-sub{font-size:11px;color:var(--sub)}
-.toggle-wrap{display:flex;align-items:center;gap:8px}
-.toggle-label{font-size:12px;font-weight:600;min-width:60px;text-align:right}
-.toggle-label.on{color:var(--verde)}
-.toggle-label.off{color:var(--sub)}
-.toggle{position:relative;width:44px;height:24px;cursor:pointer}
-.toggle input{opacity:0;width:0;height:0;position:absolute}
-.toggle-slider{position:absolute;inset:0;background:#CCC;border-radius:12px;transition:.3s}
-.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.toggle input:checked + .toggle-slider{background:var(--verde)}
-.toggle input:checked + .toggle-slider:before{transform:translateX(20px)}
-.toggle-spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--azul);border-radius:50%;animation:spin .6s linear infinite}
+#control-screen{display:none}
+.admin-grade-pills{display:flex;gap:6px;flex-wrap:wrap;padding:12px 18px;border-bottom:0.5px solid var(--border)}
+.admin-grade-pill{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--sub);transition:.15s}
+.admin-grade-pill.active{background:var(--azul);color:#fff;border-color:var(--azul)}
+.admin-period-pills{display:flex;gap:4px;padding:8px 18px;border-bottom:0.5px solid var(--border);background:var(--bg)}
+.admin-period-pill{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--sub);transition:.15s}
+.admin-period-pill.active{background:var(--azul);color:#fff;border-color:var(--azul)}
+.admin-weeks-list{padding:12px 18px;display:flex;flex-direction:column;gap:6px}
+.admin-week-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);transition:.2s}
+.admin-week-row.on{background:#E8F5E9;border-color:#A5D6A7}
+.aw-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;background:#DDD;color:var(--sub);transition:.2s}
+.admin-week-row.on .aw-num{background:var(--verde);color:#fff}
+.aw-info{flex:1}
+.aw-title{font-size:13px;font-weight:600}
+.admin-week-row.on .aw-title{color:var(--verde)}
+.aw-sub{font-size:11px;color:var(--sub)}
+.admin-week-row.on .aw-sub{color:#2E7D32}
+.aw-label{font-size:11px;font-weight:600;min-width:46px;text-align:right}
+.aw-label.on{color:var(--verde)}
+.aw-label.off{color:var(--sub)}
+.aw-toggle{position:relative;width:40px;height:22px;cursor:pointer;flex-shrink:0}
+.aw-toggle input{opacity:0;width:0;height:0;position:absolute}
+.aw-track{position:absolute;inset:0;background:#CCC;border-radius:11px;transition:.25s;pointer-events:none}
+.aw-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:.25s;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.aw-toggle input:checked ~ .aw-track{background:var(--verde)}
+.aw-toggle input:checked ~ .aw-thumb{left:21px}
+.aw-spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--azul);border-radius:50%;animation:spin .5s linear infinite;flex-shrink:0}
+.admin-footer-bar{padding:10px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--bg);border-radius:0 0 14px 14px}
+.admin-counter{font-size:12px;color:var(--sub)}
+.admin-counter strong{color:var(--verde)}
 @keyframes spin{to{transform:rotate(360deg)}}
-.admin-footer{padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
 .btn-secondary{background:var(--bg);border:1px solid var(--border);color:var(--txt);padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
-.btn-danger{background:#FFEBEE;border:1px solid #FFCDD2;color:var(--rojo);padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+.btn-danger{background:#FFEBEE;border:1px solid #FFCDD2;color:var(--rojo);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
 
 /* ── LOADING SPINNER ── */
 .page-spinner{display:flex;align-items:center;justify-content:center;padding:60px;gap:12px;color:var(--sub)}
@@ -280,7 +290,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px}
 // CONFIGURACIÓN — CAMBIA ESTOS VALORES
 // ══════════════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://uazurfbmrnsadkrxutpo.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhenVyZmJtcm5zYWRrcnh1dHBvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NTY0NzEsImV4cCI6MjA2NzIzMjQ3MX0.GmBk4XRX0gVhw20gTGX8jM58mb2gXOFC7qkY8iMEU9k'; // ← Tu anon key de Supabase
+const SUPABASE_ANON = 'TU_ANON_KEY_AQUI'; // ← Tu anon key de Supabase
 
 // Grados disponibles — añade aquí los que necesites
 const GRADOS = [
