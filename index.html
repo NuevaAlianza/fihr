@@ -224,9 +224,53 @@ main{max-width:900px;margin:0 auto;padding:20px 16px}
   nav,#admin-overlay,#toast{display:none!important}
   .week-card{break-inside:avoid}
 }
+/* ── Proteccion de copiado ── */
+.content-text{
+  user-select:none;
+  -webkit-user-select:none;
+  -moz-user-select:none;
+  -ms-user-select:none;
+}
+#copy-toast{
+  display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:#1B3A6B;color:#fff;padding:10px 22px;border-radius:20px;
+  font-size:14px;font-weight:500;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.25);
+  pointer-events:none;
+}
 </style>
 </head>
 <body>
+<div id="copy-toast">✏️ Escribe en tu cuaderno — el esfuerzo de escribir ayuda a aprender</div>
+<script>
+// ── Bloquear seleccion y copia en todo el portal ──
+document.addEventListener('copy', function(e){
+  var sel = window.getSelection();
+  if(sel && sel.toString().length > 0){
+    e.clipboardData.setData('text/plain', '');
+    e.preventDefault();
+    showCopyToast();
+  }
+});
+document.addEventListener('contextmenu', function(e){
+  var t = e.target;
+  // Permitir clic derecho en inputs y el boton de copiar classroom
+  if(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.closest('.copy-btn')) return;
+  e.preventDefault();
+  showCopyToast();
+});
+document.addEventListener('selectstart', function(e){
+  var t = e.target;
+  // Permitir seleccion en inputs y areas de texto
+  if(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.closest('.copy-btn')) return;
+  e.preventDefault();
+});
+function showCopyToast(){
+  var el = document.getElementById('copy-toast');
+  el.style.display='block';
+  clearTimeout(window._copyToastTimer);
+  window._copyToastTimer = setTimeout(function(){ el.style.display='none'; }, 2800);
+}
+</script>
 
 <!-- ── NAV ── -->
 <nav>
@@ -310,11 +354,10 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 // Grados disponibles — añade aquí los que necesites
 const GRADOS = [
-  { id: '6to', label: '6to Grado', periodos: [1,2,3,4] },
-  { id: '5to', label: '5to Grado', periodos: [1,2,3,4] },
+  { id: '2do', label: '2do Grado', periodos: [1,2,3,4] },
   { id: '4to', label: '4to Grado', periodos: [1,2,3,4] },
-  { id: '2to', label: '2to Grado', periodos: [1,2,3,4] },
-  // { id: '3ro', label: '3ro Grado', periodos: [1,2,3,4] }, // agrega aquí
+  { id: '5to', label: '5to Grado', periodos: [1,2,3,4] },
+  { id: '6to', label: '6to Grado', periodos: [1,2,3,4] },
 ];
 
 // Nombres de fases para el admin panel
