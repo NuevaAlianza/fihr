@@ -313,7 +313,7 @@ const GRADOS = [
   { id: '6to', label: '6to Grado', periodos: [1,2,3,4] },
   { id: '5to', label: '5to Grado', periodos: [1,2,3,4] },
   { id: '4to', label: '4to Grado', periodos: [1,2,3,4] },
-  { id: '2do', label: '2do Grado', periodos: [1,2,3,4] },
+  { id: '2to', label: '2to Grado', periodos: [1,2,3,4] },
   // { id: '3ro', label: '3ro Grado', periodos: [1,2,3,4] }, // agrega aquí
 ];
 
@@ -465,6 +465,36 @@ async function loadSemanas(){
 }
 
 // ══════════════════════════════════════════════════════════════════
+// RENDER MATERIALES (función separada para evitar template literals anidados)
+// ══════════════════════════════════════════════════════════════════
+function renderMateriales(materiales) {
+  if (!materiales || !materiales.length) return '';
+  const TIPOS = {
+    biblia:       { cls:'mat-biblia',   lbl:'Texto biblico' },
+    libro_abierto:{ cls:'mat-libro',    lbl:'Libro Abierto' },
+    documento:    { cls:'mat-documento',lbl:'Documento' },
+    cuento:       { cls:'mat-documento',lbl:'Lectura' },
+    poema:        { cls:'mat-biblia',   lbl:'Poema' },
+  };
+  let html = '<div class="section"><div class="sec-title" style="color:#37474F">Material de referencia</div>';
+  for (const m of materiales) {
+    const t = TIPOS[m.tipo] || { cls:'mat-documento', lbl: m.tipo||'Recurso' };
+    html += '<div class="material-block ' + t.cls + '">';
+    html += '<div class="material-header">';
+    html += '<span>' + t.lbl + '</span>';
+    html += '<span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px">' + esc(m.titulo||'') + '</span>';
+    html += '</div>';
+    html += '<div class="material-body">' + esc(m.texto||'') + '</div>';
+    if (m.contexto) html += '<div class="material-context">' + esc(m.contexto) + '</div>';
+    if (m.fuente)   html += '<div class="material-source">' + esc(m.fuente) + '</div>';
+    if (m.pagina)   html += '<div class="material-source">Referencia: ' + esc(m.pagina) + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// ══════════════════════════════════════════════════════════════════
 // RENDER SEMANA CARD
 // ══════════════════════════════════════════════════════════════════
 function renderSemanaCard(num, cfg, con){
@@ -515,20 +545,7 @@ function renderSemanaCard(num, cfg, con){
     </div>`:''}
 
     <!-- Materiales embebidos -->
-    ${materiales&&materiales.length?`<div class="section">
-      <div class="sec-title" style="color:var(--gris)">Material de referencia</div>
-      ${materiales.map(m=>{
-        const cls = m.tipo==='biblia'?'mat-biblia':m.tipo==='libro_abierto'?'mat-libro':'mat-documento';
-        const lbl = m.tipo==='biblia'?'Texto bíblico':m.tipo==='libro_abierto'?'Libro Abierto':'Documento';
-        return \`<div class="material-block \${cls}">
-          <div class="material-header"><span>\${lbl}</span><span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px">\${esc(m.titulo)}</span></div>
-          <div class="material-body">\${esc(m.texto||'')}</div>
-          \${m.contexto?\`<div class="material-context">\${esc(m.contexto)}</div>\`:''}
-          \${m.fuente?\`<div class="material-source">\${esc(m.fuente)}</div>\`:''}
-          \${m.pagina?\`<div class="material-source">Referencia: \${esc(m.pagina)}</div>\`:''}
-        </div>\`;
-      }).join('')}
-    </div>`:''}
+    ${renderMateriales(materiales)}
 
     <!-- Actividades (I/D/C) -->
     ${actvs.length?`<div class="section">
