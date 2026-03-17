@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Portal de Clases · Santo Cura de Ars</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --azul:#1B3A6B;--azul-cl:#DCE8F5;--verde:#1B5E20;--verde-cl:#E8F5E9;
+  --teal:#006064;--teal-cl:#E0F7FA;--morado:#4A148C;--morado-cl:#EDE7F6;
+  --dorado:#7B5800;--dorado-cl:#FFF8DC;--gris:#37474F;--rojo:#B71C1C;
+  --bg:#F0F4F8;--card:#fff;--txt:#1A1A1A;--sub:#555;--border:#E0E0E0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:15px;background:var(--bg);color:var(--txt);min-height:100vh}
+
+/* ── NAV ── */
+nav{background:var(--azul);color:#fff;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.nav-inner{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.15)}
+.logo{font-size:18px;font-weight:700;flex:1;cursor:default;user-select:none}
+.logo span{font-size:12px;opacity:.7;display:block;font-weight:400}
+.nav-actions{display:flex;gap:8px;align-items:center}
+.btn-ghost{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;transition:.2s}
+.btn-ghost:hover{background:rgba(255,255,255,.28)}
+.btn-ghost.active{background:#FFD54F;color:var(--azul);border-color:#FFD54F}
+
+/* ── GRADE TABS ── */
+.grade-bar{display:flex;overflow-x:auto;scrollbar-width:none;padding:4px 8px;gap:4px;background:rgba(0,0,0,.15)}
+.grade-bar::-webkit-scrollbar{display:none}
+.grade-tab{padding:7px 16px;border-radius:16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
+           color:rgba(255,255,255,.7);transition:.2s;border:1px solid transparent}
+.grade-tab:hover{color:#fff;background:rgba(255,255,255,.1)}
+.grade-tab.active{background:#fff;color:var(--azul)}
+
+/* ── PERIOD TABS ── */
+.period-bar{background:#fff;border-bottom:1px solid var(--border);display:flex;gap:0;overflow-x:auto;scrollbar-width:none}
+.period-bar::-webkit-scrollbar{display:none}
+.period-tab{padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;
+            color:var(--sub);white-space:nowrap;transition:.2s}
+.period-tab:hover{color:var(--azul)}
+.period-tab.active{color:var(--azul);border-bottom-color:var(--azul)}
+
+/* ── MAIN ── */
+main{max-width:900px;margin:0 auto;padding:20px 16px}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:60px 20px;color:var(--sub)}
+.empty .icon{font-size:48px;margin-bottom:12px}
+.empty h3{font-size:18px;font-weight:600;margin-bottom:8px;color:var(--txt)}
+.empty p{font-size:14px;line-height:1.6}
+
+/* ── WEEK CARD ── */
+.week-card{background:var(--card);border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.1);overflow:hidden;margin-bottom:20px}
+.week-header{padding:16px 20px;color:#fff;position:relative}
+.week-header .fase-badge{font-size:11px;text-transform:uppercase;letter-spacing:1px;opacity:.8;margin-bottom:4px}
+.week-header h2{font-size:20px;font-weight:700;margin-bottom:3px}
+.week-header .week-meta{font-size:12px;opacity:.85}
+.week-header .week-num{position:absolute;top:16px;right:16px;width:36px;height:36px;background:rgba(255,255,255,.2);
+                       border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700}
+
+/* ── INFO BAR ── */
+.info-bar{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--border)}
+.info-item{padding:9px 14px;border-right:1px solid var(--border);min-width:100px}
+.info-item:last-child{border-right:none}
+.info-lbl{font-size:10px;text-transform:uppercase;color:#999;letter-spacing:.5px}
+.info-val{font-size:13px;font-weight:700;margin-top:2px}
+
+/* ── SECTIONS ── */
+.section{padding:14px 20px;border-bottom:1px solid #F5F5F5}
+.section:last-child{border-bottom:none}
+.sec-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;
+           margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid currentColor}
+
+/* ── MOMENT I/D/C ── */
+.moment{display:flex;gap:12px;margin-bottom:10px;padding:11px;border-radius:8px}
+.m-badge{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+         font-weight:700;font-size:14px;flex-shrink:0;color:#fff}
+.m-body h4{font-size:13px;font-weight:700;margin-bottom:5px}
+.m-body ul,.m-body ol{padding-left:16px;font-size:13px;line-height:1.7}
+.m-body p{font-size:13px;line-height:1.65}
+.I-m{background:#EEF2FF}.I-m .m-badge{background:#3949AB}
+.D-m{background:#E8F5E9}.D-m .m-badge{background:#2E7D32}
+.C-m{background:#FFF3E0}.C-m .m-badge{background:#E65100}
+
+/* ── BIBLE BOX ── */
+.bible-box{background:#EDE7F6;border-left:4px solid var(--morado);padding:12px 14px;border-radius:0 8px 8px 0;
+           font-style:italic;font-size:13px;line-height:1.7;margin:6px 0}
+.bible-box strong{font-style:normal;color:var(--morado)}
+.bible-ref{font-size:12px;color:var(--sub);margin-top:6px;font-style:normal}
+
+/* ── CLASSROOM BOX ── */
+.classroom-box{background:#E8F5E9;border:1px solid #A5D6A7;border-radius:8px;overflow:hidden}
+.classroom-header{background:#2E7D32;color:#fff;padding:8px 14px;font-size:12px;font-weight:700;
+                  display:flex;justify-content:space-between;align-items:center}
+.classroom-body{padding:12px 14px;font-size:13px;line-height:1.7;white-space:pre-wrap;max-height:200px;overflow-y:auto;font-family:monospace;font-size:12px}
+.copy-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;
+          padding:4px 10px;border-radius:12px;cursor:pointer;font-size:11px;font-weight:700;transition:.2s}
+.copy-btn:hover{background:rgba(255,255,255,.35)}
+.copy-btn.copied{background:#FFD54F;color:#1B5E20;border-color:#FFD54F}
+
+/* ── CUADERNO ACTIVITIES ── */
+.cuaderno-step{background:#F8F9FA;border-left:4px solid var(--azul);padding:10px 14px;margin-bottom:8px;border-radius:0 6px 6px 0}
+.cuaderno-step p{font-size:13px;line-height:1.65;margin-bottom:6px}
+.mini-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.mini-table th{background:var(--azul);color:#fff;padding:6px 8px;text-align:left}
+.mini-table td{padding:18px 8px;border:1px solid #DDD}
+
+/* ── RUBRICA ── */
+.rubrica-table{width:100%;border-collapse:collapse;font-size:12px}
+.rubrica-table th{padding:7px;text-align:center;font-size:11px;color:#fff}
+.rubrica-table td{padding:7px 8px;border:1px solid #DDD;vertical-align:top;font-size:12px}
+
+/* ── TAGS ── */
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{background:var(--azul-cl);border:1px solid var(--azul);color:var(--azul);padding:3px 9px;border-radius:4px;font-size:12px}
+
+/* ── META BOX ── */
+.meta-box{background:var(--dorado-cl);border-left:4px solid var(--dorado);padding:11px 14px;
+          border-radius:0 6px 6px 0;font-style:italic;font-size:13px;line-height:1.65}
+.meta-box strong{font-style:normal;color:var(--dorado)}
+
+/* ── NOTE BOX ── */
+.note-box{background:#F8F9FA;border:1px solid var(--border);padding:11px 14px;border-radius:6px;font-size:13px;line-height:1.65;color:var(--sub)}
+.note-box strong{color:var(--txt)}
+
+/* ── EVAL BOX ── */
+.eval-box{display:flex;gap:12px;background:#F8F9FA;padding:12px;border-radius:6px;border-left:4px solid var(--azul)}
+.eval-peso{font-size:28px;font-weight:700;color:var(--rojo);min-width:52px;text-align:center}
+
+/* ══════════════════════════════════════
+   ADMIN PANEL
+══════════════════════════════════════ */
+#admin-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center}
+#admin-overlay.open{display:flex}
+#admin-panel{background:#fff;border-radius:14px;width:92%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.3)}
+.admin-header{background:var(--azul);color:#fff;padding:16px 20px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center}
+.admin-header h3{font-size:16px;font-weight:700}
+.close-btn{background:rgba(255,255,255,.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.close-btn:hover{background:rgba(255,255,255,.35)}
+
+/* ── PIN SCREEN ── */
+#pin-screen{padding:32px 24px;text-align:center}
+#pin-screen h4{font-size:18px;font-weight:700;margin-bottom:8px}
+#pin-screen p{font-size:13px;color:var(--sub);margin-bottom:20px}
+.pin-input{display:flex;gap:8px;justify-content:center;margin-bottom:16px}
+.pin-digit{width:44px;height:52px;border:2px solid var(--border);border-radius:8px;font-size:22px;text-align:center;
+           font-weight:700;transition:.2s;outline:none}
+.pin-digit:focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(27,58,107,.15)}
+.pin-error{color:var(--rojo);font-size:13px;min-height:20px}
+.btn-primary{background:var(--azul);color:#fff;border:none;padding:11px 28px;border-radius:8px;
+             cursor:pointer;font-size:14px;font-weight:700;width:100%;margin-top:8px;transition:.2s}
+.btn-primary:hover{background:#122d55}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── CONTROL PANEL ── */
+#control-screen{display:none;padding:16px}
+.control-grade-section{margin-bottom:20px}
+.control-grade-title{font-size:14px;font-weight:700;color:var(--azul);padding:8px 0;border-bottom:2px solid var(--azul-cl);margin-bottom:10px}
+.week-toggle-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.week-toggle-row:last-child{border-bottom:none}
+.week-info{flex:1}
+.week-info .w-title{font-size:13px;font-weight:600}
+.week-info .w-sub{font-size:11px;color:var(--sub)}
+.toggle-wrap{display:flex;align-items:center;gap:8px}
+.toggle-label{font-size:12px;font-weight:600;min-width:60px;text-align:right}
+.toggle-label.on{color:var(--verde)}
+.toggle-label.off{color:var(--sub)}
+.toggle{position:relative;width:44px;height:24px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;inset:0;background:#CCC;border-radius:12px;transition:.3s}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle input:checked + .toggle-slider{background:var(--verde)}
+.toggle input:checked + .toggle-slider:before{transform:translateX(20px)}
+.toggle-spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--azul);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.admin-footer{padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.btn-secondary{background:var(--bg);border:1px solid var(--border);color:var(--txt);padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+.btn-danger{background:#FFEBEE;border:1px solid #FFCDD2;color:var(--rojo);padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+
+/* ── LOADING SPINNER ── */
+.page-spinner{display:flex;align-items:center;justify-content:center;padding:60px;gap:12px;color:var(--sub)}
+.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--azul);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:20px;right:20px;background:var(--gris);color:#fff;padding:10px 18px;border-radius:8px;
+       font-size:13px;font-weight:600;z-index:9999;transform:translateY(80px);opacity:0;transition:.3s}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.success{background:var(--verde)}
+#toast.error{background:var(--rojo)}
+
+@media(max-width:600px){
+  main{padding:12px 10px}
+  .week-header h2{font-size:17px}
+  .info-item{min-width:80px}
+}
+@media print{
+  nav,#admin-overlay,#toast{display:none!important}
+  .week-card{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-inner">
+    <div class="logo" id="logo-click" title="Portal de Clases">
+      📚 Portal de Clases
+      <span>Santo Cura de Ars · FIHR</span>
+    </div>
+    <div class="nav-actions">
+      <div id="admin-indicator" style="display:none">
+        <button class="btn-ghost active" onclick="openAdmin()">⚙️ Admin</button>
+        <button class="btn-ghost" onclick="cerrarSesionAdmin()" title="Cerrar sesión admin">✕</button>
+      </div>
+      <button class="btn-ghost" id="btn-admin-ghost" onclick="openAdmin()">🔒</button>
+    </div>
+  </div>
+  <div class="grade-bar" id="grade-bar">
+    <!-- Filled by JS -->
+  </div>
+</nav>
+
+<div id="period-bar-wrap" style="background:#fff;border-bottom:1px solid var(--border)">
+  <div class="period-bar" id="period-bar"></div>
+</div>
+
+<!-- ── MAIN CONTENT ── -->
+<main id="main-content">
+  <div class="page-spinner"><div class="spinner"></div>Cargando semanas...</div>
+</main>
+
+<!-- ── ADMIN OVERLAY ── -->
+<div id="admin-overlay">
+  <div id="admin-panel">
+    <div class="admin-header">
+      <h3>⚙️ Panel de Control</h3>
+      <button class="close-btn" onclick="closeAdmin()">✕</button>
+    </div>
+
+    <!-- PIN Screen -->
+    <div id="pin-screen">
+      <div style="font-size:36px;margin-bottom:8px">🔐</div>
+      <h4>Acceso Docente</h4>
+      <p>Ingresa tu PIN para gestionar las semanas activas</p>
+      <div class="pin-input">
+        <input class="pin-digit" type="password" maxlength="1" inputmode="numeric" id="d0" oninput="pinInput(this,1)" onkeydown="pinBack(this,event,-1)">
+        <input class="pin-digit" type="password" maxlength="1" inputmode="numeric" id="d1" oninput="pinInput(this,2)" onkeydown="pinBack(this,event,0)">
+        <input class="pin-digit" type="password" maxlength="1" inputmode="numeric" id="d2" oninput="pinInput(this,3)" onkeydown="pinBack(this,event,1)">
+        <input class="pin-digit" type="password" maxlength="1" inputmode="numeric" id="d3" oninput="pinInput(this,-1)" onkeydown="pinBack(this,event,2)">
+      </div>
+      <div class="pin-error" id="pin-error"></div>
+      <button class="btn-primary" id="pin-btn" onclick="verificarPin()" disabled>Entrar</button>
+      <p style="margin-top:12px;font-size:11px;color:var(--sub)">PIN de 4 dígitos · El estudiante no ve esta opción</p>
+    </div>
+
+    <!-- Control Screen -->
+    <div id="control-screen">
+      <div style="padding:12px 16px;background:var(--verde-cl);border-bottom:1px solid var(--border);font-size:13px;color:var(--verde);font-weight:600">
+        ✅ Sesión activa · Los cambios se guardan en tiempo real
+      </div>
+      <div id="toggle-container" style="padding:16px">
+        <div class="page-spinner"><div class="spinner"></div>Cargando...</div>
+      </div>
+    </div>
+
+    <div class="admin-footer">
+      <button class="btn-secondary" onclick="closeAdmin()">Cerrar</button>
+      <button class="btn-danger" id="logout-btn" style="display:none" onclick="cerrarSesionAdmin()">Cerrar sesión</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CONFIGURACIÓN — CAMBIA ESTOS VALORES
+// ══════════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://uazurfbmrnsadkrxutpo.supabase.co';
+const SUPABASE_ANON = 'TU_ANON_KEY_AQUI'; // ← Tu anon key de Supabase
+
+// Grados disponibles — añade aquí los que necesites
+const GRADOS = [
+  { id: '6to', label: '6to Grado', periodos: [1,2,3,4] },
+  { id: '5to', label: '5to Grado', periodos: [1,2,3,4] },
+  { id: '4to', label: '4to Grado', periodos: [1,2,3,4] },
+  // { id: '3ro', label: '3ro Grado', periodos: [1,2,3,4] }, // agrega aquí
+];
+
+// Nombres de fases para el admin panel
+const FASE_NAMES = {
+  1:'VER — Análisis del Contexto',
+  2:'JUZGAR — Interpretación',
+  3:'JUZGAR — Iluminación',
+  4:'ACTUAR — Propuestas',
+  5:'ACTUAR — Borrador',
+  6:'CELEBRAR — Panel Final'
+};
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let state = {
+  grado: GRADOS[0].id,
+  periodo: 4,
+  pinHash: sessionStorage.getItem('admin_hash') || null,
+  isAdmin: false,
+  semanas: [],
+  config: {}
+};
+
+// ── Determinar grado/periodo desde URL ──
+const urlP = new URLSearchParams(location.search);
+if(urlP.has('grado') && GRADOS.find(g=>g.id===urlP.get('grado'))) state.grado = urlP.get('grado');
+if(urlP.has('periodo')) state.periodo = parseInt(urlP.get('periodo'))||4;
+
+// ── Comprobar si hay sesión admin activa ──
+if(state.pinHash) verificarHashAlmacenado();
+
+// ── Render inicial ──
+renderGradeTabs();
+renderPeriodTabs();
+loadSemanas();
+
+// Logo: click 5 veces abre admin
+let logoClicks=0,logoTimer=null;
+document.getElementById('logo-click').addEventListener('click',()=>{
+  logoClicks++;
+  clearTimeout(logoTimer);
+  logoTimer=setTimeout(()=>logoClicks=0,1500);
+  if(logoClicks>=5){logoClicks=0;openAdmin();}
+});
+
+// ══════════════════════════════════════════════════════════════════
+// GRADE & PERIOD TABS
+// ══════════════════════════════════════════════════════════════════
+function renderGradeTabs(){
+  const bar = document.getElementById('grade-bar');
+  bar.innerHTML = GRADOS.map(g=>`
+    <div class="grade-tab${g.id===state.grado?' active':''}" onclick="selectGrado('${g.id}')">${g.label}</div>
+  `).join('');
+}
+
+function renderPeriodTabs(){
+  const g = GRADOS.find(g=>g.id===state.grado);
+  const bar = document.getElementById('period-bar');
+  bar.innerHTML = (g?.periodos||[1,2,3,4]).map(p=>`
+    <div class="period-tab${p===state.periodo?' active':''}" onclick="selectPeriodo(${p})">Período ${p}</div>
+  `).join('');
+}
+
+function selectGrado(g){
+  state.grado=g;
+  renderGradeTabs();
+  renderPeriodTabs();
+  loadSemanas();
+  updateURL();
+}
+
+function selectPeriodo(p){
+  state.periodo=p;
+  renderPeriodTabs();
+  loadSemanas();
+  updateURL();
+}
+
+function updateURL(){
+  const u=new URL(location);
+  u.searchParams.set('grado',state.grado);
+  u.searchParams.set('periodo',state.periodo);
+  history.replaceState({},'',u);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// LOAD CONTENT
+// ══════════════════════════════════════════════════════════════════
+async function loadSemanas(){
+  document.getElementById('main-content').innerHTML=`<div class="page-spinner"><div class="spinner"></div>Cargando semanas...</div>`;
+
+  const [{ data: configs }, { data: contenidos }] = await Promise.all([
+    sb.from('clases_config').select('*')
+      .eq('grado', state.grado).eq('periodo', state.periodo),
+    sb.from('clases_contenido').select('*')
+      .eq('grado', state.grado).eq('periodo', state.periodo)
+  ]);
+
+  // Map por semana
+  const cfgMap = {};
+  (configs||[]).forEach(c=>cfgMap[c.semana]=c);
+  const conMap = {};
+  (contenidos||[]).forEach(c=>conMap[c.semana]=c);
+
+  // Solo activas para estudiante (o todas para admin)
+  const semanaActivas = Object.entries(cfgMap)
+    .filter(([_,c])=>state.isAdmin||c.activa)
+    .map(([n,_])=>parseInt(n))
+    .sort((a,b)=>a-b);
+
+  if(semanaActivas.length===0){
+    document.getElementById('main-content').innerHTML=`
+      <div class="empty">
+        <div class="icon">📅</div>
+        <h3>${state.isAdmin?'No hay semanas configuradas':'Aún no hay clases publicadas'}</h3>
+        <p>${state.isAdmin?'Activa semanas desde el panel de control (⚙️ Admin).':'El maestro publicará el contenido próximamente.'}</p>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  for(const n of semanaActivas){
+    const cfg = cfgMap[n];
+    const con = conMap[n];
+    html += renderSemanaCard(n, cfg, con);
+  }
+
+  // Admin badge en cada tarjeta si está inactiva
+  if(state.isAdmin){
+    const inactivas = Object.entries(cfgMap)
+      .filter(([_,c])=>!c.activa)
+      .map(([n,_])=>parseInt(n))
+      .sort((a,b)=>a-b);
+    if(inactivas.length>0){
+      html+=`<div style="opacity:.5;margin-top:8px"><p style="font-size:12px;color:var(--sub);font-weight:600;margin-bottom:8px">— Semanas inactivas (solo visibles para admin) —</p>`;
+      for(const n of inactivas){
+        const con = conMap[n];
+        html += `<div style="opacity:.6">${renderSemanaCard(n, cfgMap[n], con)}</div>`;
+      }
+      html+=`</div>`;
+    }
+  }
+
+  document.getElementById('main-content').innerHTML=html;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RENDER SEMANA CARD
+// ══════════════════════════════════════════════════════════════════
+function renderSemanaCard(num, cfg, con){
+  if(!con){
+    return `<div class="week-card">
+      <div class="week-header" style="background:var(--gris)">
+        <div class="fase-badge">Semana ${num}</div>
+        <h2>Contenido próximamente</h2>
+        <div class="week-num">${num}</div>
+      </div>
+      <div class="section"><p style="color:var(--sub);font-size:13px">El contenido de esta semana será publicado pronto.</p></div>
+    </div>`;
+  }
+
+  const color = con.color||'#1B3A6B';
+  const inds = parseJSON(con.indicadores,[]);
+  const actvs = parseJSON(con.actividades,[]);
+  const cuaderno = parseJSON(con.actividades_cuaderno,[]);
+  const rubrica = parseJSON(con.rubrica,null);
+  const recursos = parseJSON(con.recursos,[]);
+  const textoBib = parseJSON(con.texto_biblico,null);
+
+  return `<div class="week-card" id="semana-${num}">
+    <div class="week-header" style="background:${color}">
+      <div class="fase-badge">Semana ${num} · ${con.fase||''}</div>
+      <h2>${esc(con.titulo)}</h2>
+      <div class="week-meta">${esc(con.subtitulo||'')} · ${con.grado} · P${con.periodo}</div>
+      <div class="week-num">${num}</div>
+    </div>
+
+    <!-- Info bar -->
+    <div class="info-bar">
+      ${con.competencia?`<div class="info-item"><div class="info-lbl">Competencia</div><div class="info-val" style="font-size:11px">${esc(con.competencia)}</div></div>`:''}
+      ${inds.length?`<div class="info-item"><div class="info-lbl">Indicadores</div><div class="info-val">${inds.join(' · ')}</div></div>`:''}
+      ${con.instrumento?`<div class="info-item"><div class="info-lbl">Instrumento</div><div class="info-val">${esc(con.instrumento)}</div></div>`:''}
+      ${con.peso?`<div class="info-item"><div class="info-lbl">Peso</div><div class="info-val" style="color:var(--rojo)">${esc(con.peso)}</div></div>`:''}
+    </div>
+
+    <!-- Texto bíblico -->
+    ${textoBib?`<div class="section">
+      <div class="sec-title" style="color:var(--morado)">📖 Texto bíblico</div>
+      <div class="bible-box">
+        <strong>${esc(textoBib.cita||'')}</strong><br><br>
+        ${esc(textoBib.texto||'')}
+        ${textoBib.reflexion?`<div class="bible-ref">→ ${esc(textoBib.reflexion)}</div>`:''}
+      </div>
+    </div>`:''}
+
+    <!-- Actividades (I/D/C) -->
+    ${actvs.length?`<div class="section">
+      <div class="sec-title" style="color:${color}">🕐 Secuencia de la clase</div>
+      ${actvs.map(a=>`
+        <div class="moment ${a.tipo}-m">
+          <div class="m-badge">${esc(a.tipo)}</div>
+          <div class="m-body">
+            <h4>${esc(a.titulo)}</h4>
+            <ul>${(a.pasos||[]).map(p=>`<li>${esc(p)}</li>`).join('')}</ul>
+          </div>
+        </div>`).join('')}
+    </div>`:''}
+
+    <!-- Actividades del cuaderno -->
+    ${cuaderno.length?`<div class="section">
+      <div class="sec-title" style="color:${color}">✏️ Actividades en el cuaderno</div>
+      ${cuaderno.map((act,i)=>`
+        <div class="cuaderno-step">
+          <p><strong>${i+1}.</strong> ${esc(act.instruccion)}</p>
+          ${act.tiene_tabla&&act.tabla_headers?`
+            <table class="mini-table">
+              <tr>${act.tabla_headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr>
+              ${Array(act.tabla_filas||2).fill(0).map(()=>`<tr>${act.tabla_headers.map(()=>`<td></td>`).join('')}</tr>`).join('')}
+            </table>`:''}
+        </div>`).join('')}
+    </div>`:''}
+
+    <!-- Google Classroom -->
+    ${con.classroom_txt?`<div class="section">
+      <div class="sec-title" style="color:var(--verde)">📋 Google Classroom — Copiar y pegar</div>
+      <div class="classroom-box">
+        <div class="classroom-header">
+          Texto listo para Google Classroom
+          <button class="copy-btn" onclick="copyClassroom(this,'${escapeSQ(con.classroom_txt)}')">Copiar</button>
+        </div>
+        <div class="classroom-body">${esc(con.classroom_txt)}</div>
+      </div>
+    </div>`:''}
+
+    <!-- Metacognición -->
+    ${con.metacognicion?`<div class="section">
+      <div class="sec-title" style="color:var(--dorado)">💭 Metacognición</div>
+      <div class="meta-box"><strong>Pregunta de reflexión:</strong><br>${esc(con.metacognicion)}</div>
+    </div>`:''}
+
+    <!-- Evaluación -->
+    ${con.peso&&con.instrumento?`<div class="section">
+      <div class="sec-title" style="color:var(--rojo)">📊 Evaluación · Registro en la App</div>
+      <div class="eval-box">
+        <div class="eval-peso">${esc(con.peso)}</div>
+        <div>
+          <strong>${esc(con.instrumento)}</strong><br>
+          ${inds.length?`<small>Indicadores: ${inds.join(', ')}</small>`:''}
+        </div>
+      </div>
+    </div>`:''}
+
+    <!-- Rúbrica -->
+    ${rubrica&&rubrica.criterios?`<div class="section">
+      <div class="sec-title" style="color:var(--gris)">📏 Rúbrica de evaluación</div>
+      <div style="overflow-x:auto">
+        <table class="rubrica-table">
+          <tr style="background:var(--gris)">
+            <th style="padding:7px;text-align:left">Criterio</th>
+            <th style="padding:7px;background:#1B5E20">Excelente (4)</th>
+            <th style="padding:7px;background:#0D47A1">Logrado (3)</th>
+            <th style="padding:7px;background:#E65100">En Proceso (2)</th>
+            <th style="padding:7px;background:#B71C1C">Inicio (1)</th>
+          </tr>
+          ${rubrica.criterios.map(c=>`<tr>
+            <td style="background:var(--azul-cl);font-weight:600">${esc(c.nombre)}</td>
+            <td style="background:#E8F5E9">${esc(c.niveles?.excelente||'')}</td>
+            <td>${esc(c.niveles?.logrado||'')}</td>
+            <td>${esc(c.niveles?.proceso||'')}</td>
+            <td style="background:#FFEBEE">${esc(c.niveles?.inicio||'')}</td>
+          </tr>`).join('')}
+        </table>
+      </div>
+    </div>`:''}
+
+    <!-- Recursos -->
+    ${recursos.length?`<div class="section">
+      <div class="sec-title" style="color:var(--verde)">📦 Recursos</div>
+      <div class="tags">${recursos.map(r=>`<span class="tag">${esc(r)}</span>`).join('')}</div>
+    </div>`:''}
+
+    <!-- Nota sustituto -->
+    ${con.nota_sustituto?`<div class="section">
+      <div class="sec-title" style="color:var(--gris)">📝 Nota para el/la sustituto/a</div>
+      <div class="note-box">${esc(con.nota_sustituto)}</div>
+    </div>`:''}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ADMIN — PIN
+// ══════════════════════════════════════════════════════════════════
+function openAdmin(){
+  document.getElementById('admin-overlay').classList.add('open');
+  if(state.isAdmin){
+    showControlScreen();
+  } else {
+    document.getElementById('pin-screen').style.display='block';
+    document.getElementById('control-screen').style.display='none';
+    document.getElementById('d0').focus();
+  }
+}
+function closeAdmin(){document.getElementById('admin-overlay').classList.remove('open')}
+
+function pinInput(el,next){
+  el.value=el.value.replace(/\D/g,'');
+  const digits=['d0','d1','d2','d3'];
+  const allFilled=digits.every(id=>document.getElementById(id).value.length===1);
+  document.getElementById('pin-btn').disabled=!allFilled;
+  if(el.value&&next>=0) document.getElementById('d'+next).focus();
+}
+function pinBack(el,e,prev){
+  if(e.key==='Backspace'&&!el.value&&prev>=0) document.getElementById('d'+prev).focus();
+}
+
+async function verificarPin(){
+  const pin=['d0','d1','d2','d3'].map(id=>document.getElementById(id).value).join('');
+  if(pin.length<4) return;
+  document.getElementById('pin-btn').disabled=true;
+  document.getElementById('pin-btn').textContent='Verificando...';
+
+  const hash = await sha256(pin);
+  const {data} = await sb.from('admin_config').select('pin_hash').single();
+  if(data && data.pin_hash === hash){
+    state.pinHash=hash;
+    state.isAdmin=true;
+    sessionStorage.setItem('admin_hash',hash);
+    document.getElementById('pin-error').textContent='';
+    showControlScreen();
+    updateAdminUI();
+    loadSemanas(); // Recargar para mostrar inactivas
+  } else {
+    document.getElementById('pin-error').textContent='PIN incorrecto. Inténtalo de nuevo.';
+    document.getElementById('pin-btn').disabled=false;
+    document.getElementById('pin-btn').textContent='Entrar';
+    ['d0','d1','d2','d3'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('d0').focus();
+  }
+}
+
+async function verificarHashAlmacenado(){
+  const {data} = await sb.from('admin_config').select('pin_hash').single();
+  if(data && data.pin_hash === state.pinHash){
+    state.isAdmin=true;
+    updateAdminUI();
+  } else {
+    state.pinHash=null;
+    sessionStorage.removeItem('admin_hash');
+  }
+}
+
+function updateAdminUI(){
+  document.getElementById('admin-indicator').style.display=state.isAdmin?'flex':'none';
+  document.getElementById('btn-admin-ghost').style.display=state.isAdmin?'none':'flex';
+}
+
+function cerrarSesionAdmin(){
+  state.isAdmin=false;
+  state.pinHash=null;
+  sessionStorage.removeItem('admin_hash');
+  closeAdmin();
+  updateAdminUI();
+  loadSemanas();
+  showToast('Sesión cerrada');
+}
+
+// ── Control Screen ──
+async function showControlScreen(){
+  document.getElementById('pin-screen').style.display='none';
+  document.getElementById('control-screen').style.display='block';
+  document.getElementById('logout-btn').style.display='block';
+  await loadToggleControls();
+}
+
+async function loadToggleControls(){
+  const container = document.getElementById('toggle-container');
+  container.innerHTML=`<div class="page-spinner"><div class="spinner"></div>Cargando estados...</div>`;
+
+  const {data:configs} = await sb.from('clases_config').select('*').order('grado').order('periodo').order('semana');
+  const cfgMap={};
+  (configs||[]).forEach(c=>{
+    const key=`${c.grado}-${c.periodo}-${c.semana}`;
+    cfgMap[key]=c;
+  });
+
+  // Agrupar por grado
+  let html='';
+  for(const g of GRADOS){
+    html+=`<div class="control-grade-section">
+      <div class="control-grade-title">${g.label}</div>`;
+    for(const p of g.periodos){
+      html+=`<p style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--sub);margin:8px 0 4px;font-weight:700">Período ${p}</p>`;
+      for(let s=1;s<=6;s++){
+        const key=`${g.id}-${p}-${s}`;
+        const cfg=cfgMap[key];
+        const activa=cfg?.activa||false;
+        html+=`<div class="week-toggle-row">
+          <div class="week-info">
+            <div class="w-title">Semana ${s}</div>
+            <div class="w-sub">${FASE_NAMES[s]||'Semana '+s}</div>
+          </div>
+          <div class="toggle-wrap">
+            <span class="toggle-label ${activa?'on':'off'}" id="lbl-${key}">${activa?'Activa':'Inactiva'}</span>
+            <label class="toggle" id="toggle-${key}">
+              <input type="checkbox" ${activa?'checked':''} onchange="toggleSemana('${g.id}',${p},${s},this)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>`;
+      }
+    }
+    html+='</div>';
+  }
+  container.innerHTML=html;
+}
+
+async function toggleSemana(grado,periodo,semana,checkbox){
+  const key=`${grado}-${periodo}-${semana}`;
+  const activa=checkbox.checked;
+
+  // Mostrar spinner
+  checkbox.parentElement.innerHTML='<div class="toggle-spinner"></div>';
+
+  const {data,error} = await sb.rpc('toggle_semana',{
+    p_grado:grado, p_periodo:periodo, p_semana:semana,
+    p_activa:activa, p_pin_hash:state.pinHash
+  });
+
+  if(error||!data){
+    showToast('Error al guardar','error');
+    await loadToggleControls(); // Reset
+    return;
+  }
+
+  // Actualizar label
+  document.getElementById('lbl-'+key).textContent=activa?'Activa':'Inactiva';
+  document.getElementById('lbl-'+key).className='toggle-label '+(activa?'on':'off');
+
+  // Reconstruir toggle
+  const toggleEl = document.getElementById('toggle-'+key);
+  if(toggleEl){
+    toggleEl.innerHTML=`<input type="checkbox" ${activa?'checked':''} onchange="toggleSemana('${grado}',${periodo},${semana},this)"><span class="toggle-slider"></span>`;
+  }
+
+  showToast(`Semana ${semana} ${activa?'activada ✅':'desactivada'}`,'success');
+
+  // Recargar contenido principal si es el grado/periodo actual
+  if(grado===state.grado&&periodo===state.periodo) loadSemanas();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════════
+async function sha256(msg){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function esc(s){
+  if(!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escapeSQ(s){ return String(s||'').replace(/'/g,"\\'").replace(/\n/g,'\\n'); }
+
+function parseJSON(val,fallback){
+  if(!val) return fallback;
+  if(typeof val==='object') return val;
+  try{return JSON.parse(val);}catch{return fallback;}
+}
+
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='show'+(type?' '+type:'');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.className='',2800);
+}
+
+function copyClassroom(btn,txt){
+  const text=txt.replace(/\\n/g,'\n').replace(/\\'/g,"'");
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='¡Copiado!';
+    btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copiar';btn.classList.remove('copied');},2000);
+  });
+}
+
+// Cerrar admin con Escape
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeAdmin();
+});
+
+// Cerrar al clic fuera
+document.getElementById('admin-overlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('admin-overlay')) closeAdmin();
+});
+</script>
+</body>
+</html>
