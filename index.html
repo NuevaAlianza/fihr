@@ -90,8 +90,8 @@ main{max-width:900px;margin:0 auto;padding:20px 16px}
 .bible-ref{font-size:12px;color:var(--sub);margin-top:6px;font-style:normal}
 
 /* ── CLASSROOM BOX ── */
-.classroom-box{background:#E8F5E9;border:1px solid #A5D6A7;border-radius:8px;overflow:hidden}
-.classroom-header{background:#2E7D32;color:#fff;padding:8px 14px;font-size:12px;font-weight:700;
+.classroom-box{background:#F8F9FA;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.classroom-header{background:#1B3A6B;color:#fff;padding:8px 14px;font-size:12px;font-weight:700;
                   display:flex;justify-content:space-between;align-items:center}
 .classroom-body{padding:12px 14px;font-size:13px;line-height:1.7;white-space:pre-wrap;max-height:200px;overflow-y:auto;font-family:monospace;font-size:12px}
 .copy-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;
@@ -488,7 +488,7 @@ function renderSemanaCard(num, cfg, con){
 
     <!-- Texto bíblico -->
     ${textoBib?`<div class="section">
-      <div class="sec-title" style="color:var(--morado)">📖 Texto bíblico</div>
+      <div class="sec-title" style="color:var(--morado)">Texto bíblico</div>
       <div class="bible-box">
         <strong>${esc(textoBib.cita||'')}</strong><br><br>
         ${esc(textoBib.texto||'')}
@@ -498,7 +498,7 @@ function renderSemanaCard(num, cfg, con){
 
     <!-- Actividades (I/D/C) -->
     ${actvs.length?`<div class="section">
-      <div class="sec-title" style="color:${color}">🕐 Secuencia de la clase</div>
+      <div class="sec-title" style="color:${color}">Secuencia de la clase</div>
       ${actvs.map(a=>`
         <div class="moment ${a.tipo}-m">
           <div class="m-badge">${esc(a.tipo)}</div>
@@ -511,7 +511,7 @@ function renderSemanaCard(num, cfg, con){
 
     <!-- Actividades del cuaderno -->
     ${cuaderno.length?`<div class="section">
-      <div class="sec-title" style="color:${color}">✏️ Actividades en el cuaderno</div>
+      <div class="sec-title" style="color:${color}">Actividades en el cuaderno</div>
       ${cuaderno.map((act,i)=>`
         <div class="cuaderno-step">
           <p><strong>${i+1}.</strong> ${esc(act.instruccion)}</p>
@@ -525,10 +525,10 @@ function renderSemanaCard(num, cfg, con){
 
     <!-- Google Classroom -->
     ${con.classroom_txt?`<div class="section">
-      <div class="sec-title" style="color:var(--verde)">📋 Google Classroom — Copiar y pegar</div>
+      <div class="sec-title" style="color:var(--verde)">Tarea para Google Classroom</div>
       <div class="classroom-box">
         <div class="classroom-header">
-          Texto listo para Google Classroom
+          Tarea — copiar en Google Classroom
           <button class="copy-btn" onclick="copyClassroom(this,'${escapeSQ(con.classroom_txt)}')">Copiar</button>
         </div>
         <div class="classroom-body">${esc(con.classroom_txt)}</div>
@@ -537,13 +537,13 @@ function renderSemanaCard(num, cfg, con){
 
     <!-- Metacognición -->
     ${con.metacognicion?`<div class="section">
-      <div class="sec-title" style="color:var(--dorado)">💭 Metacognición</div>
+      <div class="sec-title" style="color:var(--dorado)">Reflexión</div>
       <div class="meta-box"><strong>Pregunta de reflexión:</strong><br>${esc(con.metacognicion)}</div>
     </div>`:''}
 
     <!-- Evaluación -->
     ${con.peso&&con.instrumento?`<div class="section">
-      <div class="sec-title" style="color:var(--rojo)">📊 Evaluación · Registro en la App</div>
+      <div class="sec-title" style="color:var(--rojo)">Evaluación</div>
       <div class="eval-box">
         <div class="eval-peso">${esc(con.peso)}</div>
         <div>
@@ -555,7 +555,7 @@ function renderSemanaCard(num, cfg, con){
 
     <!-- Rúbrica -->
     ${rubrica&&rubrica.criterios?`<div class="section">
-      <div class="sec-title" style="color:var(--gris)">📏 Rúbrica de evaluación</div>
+      <div class="sec-title" style="color:var(--gris)">Rúbrica</div>
       <div style="overflow-x:auto">
         <table class="rubrica-table">
           <tr style="background:var(--gris)">
@@ -578,13 +578,13 @@ function renderSemanaCard(num, cfg, con){
 
     <!-- Recursos -->
     ${recursos.length?`<div class="section">
-      <div class="sec-title" style="color:var(--verde)">📦 Recursos</div>
+      <div class="sec-title" style="color:var(--verde)">Recursos</div>
       <div class="tags">${recursos.map(r=>`<span class="tag">${esc(r)}</span>`).join('')}</div>
     </div>`:''}
 
     <!-- Nota sustituto -->
     ${con.nota_sustituto?`<div class="section">
-      <div class="sec-title" style="color:var(--gris)">📝 Nota para el/la sustituto/a</div>
+      <div class="sec-title" style="color:var(--gris)">Nota para sustituto/a</div>
       <div class="note-box">${esc(con.nota_sustituto)}</div>
     </div>`:''}
   </div>`;
