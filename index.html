@@ -257,17 +257,18 @@ main{max-width:900px;margin:0 auto;padding:20px 16px}
 
     <!-- Control Screen -->
     <div id="control-screen">
-      <div style="padding:12px 16px;background:var(--verde-cl);border-bottom:1px solid var(--border);font-size:13px;color:var(--verde);font-weight:600">
-        ✅ Sesión activa · Los cambios se guardan en tiempo real
+      <div style="padding:8px 18px;background:#E8F5E9;border-bottom:1px solid var(--border);font-size:12px;color:var(--verde);font-weight:600">
+        ✅ Sesión activa — cambios en tiempo real
       </div>
-      <div id="toggle-container" style="padding:16px">
+      <div class="admin-grade-pills" id="admin-grade-pills"></div>
+      <div class="admin-period-pills" id="admin-period-pills"></div>
+      <div class="admin-weeks-list" id="admin-weeks-list">
         <div class="page-spinner"><div class="spinner"></div>Cargando...</div>
       </div>
-    </div>
-
-    <div class="admin-footer">
-      <button class="btn-secondary" onclick="closeAdmin()">Cerrar</button>
-      <button class="btn-danger" id="logout-btn" style="display:none" onclick="cerrarSesionAdmin()">Cerrar sesión</button>
+      <div class="admin-footer-bar">
+        <span class="admin-counter" id="admin-counter">—</span>
+        <button class="btn-danger" onclick="cerrarSesionAdmin()">Cerrar sesión</button>
+      </div>
     </div>
   </div>
 </div>
@@ -279,7 +280,7 @@ main{max-width:900px;margin:0 auto;padding:20px 16px}
 // CONFIGURACIÓN — CAMBIA ESTOS VALORES
 // ══════════════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://uazurfbmrnsadkrxutpo.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhenVyZmJtcm5zYWRrcnh1dHBvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NTY0NzEsImV4cCI6MjA2NzIzMjQ3MX0.GmBk4XRX0gVhw20gTGX8jM58mb2gXOFC7qkY8iMEU9k'; // ← Tu anon key de Supabase
+const SUPABASE_ANON = 'TU_ANON_KEY_AQUI'; // ← Tu anon key de Supabase
 
 // Grados disponibles — añade aquí los que necesites
 const GRADOS = [
@@ -396,7 +397,7 @@ async function loadSemanas(){
 
   // Solo activas para estudiante (o todas para admin)
   const semanaActivas = Object.entries(cfgMap)
-    .filter(([_,c])=>c.activa)
+    .filter(([_,c])=>state.isAdmin||c.activa)
     .map(([n,_])=>parseInt(n))
     .sort((a,b)=>a-b);
 
@@ -657,61 +658,85 @@ function cerrarSesionAdmin(){
 }
 
 // ── Control Screen ──
+// Estado del admin panel (independiente del portal)
+let adminState = { grado: null, periodo: 4, configs: {} };
+const FASES_ADMIN = {1:'VER — Análisis del contexto',2:'JUZGAR — Interpretación',
+  3:'JUZGAR — Iluminación',4:'ACTUAR — Propuestas',5:'ACTUAR — Borrador',6:'CELEBRAR — Panel final'};
+
 async function showControlScreen(){
   document.getElementById('pin-screen').style.display='none';
   document.getElementById('control-screen').style.display='block';
-  document.getElementById('logout-btn').style.display='block';
-  await loadToggleControls();
+
+  // Cargar todos los configs una sola vez
+  const {data} = await sb.from('clases_config').select('*');
+  adminState.configs={};
+  (data||[]).forEach(c=>{ adminState.configs[`${c.grado}-${c.periodo}-${c.semana}`]=c; });
+
+  // Grado y período por defecto = el que está viendo en el portal
+  adminState.grado = state.grado || GRADOS[0].id;
+  adminState.periodo = state.periodo || 4;
+
+  renderAdminGradePills();
+  renderAdminPeriodPills();
+  renderAdminWeeks();
 }
 
-async function loadToggleControls(){
-  const container = document.getElementById('toggle-container');
-  container.innerHTML=`<div class="page-spinner"><div class="spinner"></div>Cargando estados...</div>`;
+function renderAdminGradePills(){
+  document.getElementById('admin-grade-pills').innerHTML = GRADOS.map(g=>`
+    <div class="admin-grade-pill${g.id===adminState.grado?' active':''}"
+         onclick="selectAdminGrado('${g.id}')">${g.label}</div>
+  `).join('');
+}
 
-  const {data:configs} = await sb.from('clases_config').select('*').order('grado').order('periodo').order('semana');
-  const cfgMap={};
-  (configs||[]).forEach(c=>{
-    const key=`${c.grado}-${c.periodo}-${c.semana}`;
-    cfgMap[key]=c;
-  });
+function renderAdminPeriodPills(){
+  const g = GRADOS.find(g=>g.id===adminState.grado);
+  document.getElementById('admin-period-pills').innerHTML = (g?.periodos||[1,2,3,4]).map(p=>`
+    <div class="admin-period-pill${p===adminState.periodo?' active':''}"
+         onclick="selectAdminPeriodo(${p})">P${p}</div>
+  `).join('');
+}
 
-  // Agrupar por grado
-  let html='';
-  for(const g of GRADOS){
-    html+=`<div class="control-grade-section">
-      <div class="control-grade-title">${g.label}</div>`;
-    for(const p of g.periodos){
-      html+=`<p style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--sub);margin:8px 0 4px;font-weight:700">Período ${p}</p>`;
-      for(let s=1;s<=6;s++){
-        const key=`${g.id}-${p}-${s}`;
-        const cfg=cfgMap[key];
-        const activa=cfg?.activa||false;
-        html+=`<div class="week-toggle-row">
-          <div class="week-info">
-            <div class="w-title">Semana ${s}</div>
-            <div class="w-sub">${FASE_NAMES[s]||'Semana '+s}</div>
-          </div>
-          <div class="toggle-wrap">
-            <span class="toggle-label ${activa?'on':'off'}" id="lbl-${key}">${activa?'Activa':'Inactiva'}</span>
-            <label class="toggle" id="toggle-${key}">
-              <input type="checkbox" ${activa?'checked':''} onchange="toggleSemana('${g.id}',${p},${s},this)">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>`;
-      }
-    }
-    html+='</div>';
+function renderAdminWeeks(){
+  const list = document.getElementById('admin-weeks-list');
+  let html=''; let activas=0;
+  for(let s=1;s<=6;s++){
+    const key=`${adminState.grado}-${adminState.periodo}-${s}`;
+    const on = adminState.configs[key]?.activa||false;
+    if(on) activas++;
+    html+=`<div class="admin-week-row${on?' on':''}" id="arow-${key}">
+      <div class="aw-num" id="anum-${key}">${s}</div>
+      <div class="aw-info">
+        <div class="aw-title">Semana ${s}</div>
+        <div class="aw-sub">${FASES_ADMIN[s]||'Semana '+s}</div>
+      </div>
+      <span class="aw-label${on?' on':' off'}" id="albl-${key}">${on?'Activa':'Inactiva'}</span>
+      <label class="aw-toggle" id="atog-${key}">
+        <input type="checkbox" ${on?'checked':''}
+               onchange="toggleSemana('${adminState.grado}',${adminState.periodo},${s},this)">
+        <div class="aw-track"></div><div class="aw-thumb"></div>
+      </label>
+    </div>`;
   }
-  container.innerHTML=html;
+  list.innerHTML=html;
+  updateAdminCounter(activas);
 }
+
+function updateAdminCounter(activas){
+  const g=GRADOS.find(g=>g.id===adminState.grado);
+  document.getElementById('admin-counter').innerHTML=
+    `${g?.label||adminState.grado} · P${adminState.periodo} · <strong>${activas} de 6 activa${activas!==1?'s':''}</strong>`;
+}
+
+function selectAdminGrado(g){ adminState.grado=g; renderAdminGradePills(); renderAdminPeriodPills(); renderAdminWeeks(); }
+function selectAdminPeriodo(p){ adminState.periodo=p; renderAdminPeriodPills(); renderAdminWeeks(); }
 
 async function toggleSemana(grado,periodo,semana,checkbox){
   const key=`${grado}-${periodo}-${semana}`;
   const activa=checkbox.checked;
 
-  // Mostrar spinner
-  checkbox.parentElement.innerHTML='<div class="toggle-spinner"></div>';
+  // Reemplazar toggle con spinner
+  const togEl=document.getElementById('atog-'+key);
+  if(togEl) togEl.outerHTML=`<div class="aw-spinner" id="atog-${key}"></div>`;
 
   const {data,error} = await sb.rpc('toggle_semana',{
     p_grado:grado, p_periodo:periodo, p_semana:semana,
@@ -720,23 +745,35 @@ async function toggleSemana(grado,periodo,semana,checkbox){
 
   if(error||!data){
     showToast('Error al guardar','error');
-    await loadToggleControls(); // Reset
+    await showControlScreen();
     return;
   }
 
-  // Actualizar label
-  document.getElementById('lbl-'+key).textContent=activa?'Activa':'Inactiva';
-  document.getElementById('lbl-'+key).className='toggle-label '+(activa?'on':'off');
+  // Actualizar estado local
+  if(!adminState.configs[key]) adminState.configs[key]={};
+  adminState.configs[key].activa=activa;
 
-  // Reconstruir toggle
-  const toggleEl = document.getElementById('toggle-'+key);
-  if(toggleEl){
-    toggleEl.innerHTML=`<input type="checkbox" ${activa?'checked':''} onchange="toggleSemana('${grado}',${periodo},${semana},this)"><span class="toggle-slider"></span>`;
-  }
+  // Actualizar fila visualmente
+  const row=document.getElementById('arow-'+key);
+  const lbl=document.getElementById('albl-'+key);
+  const num=document.getElementById('anum-'+key);
+  if(row) row.className='admin-week-row'+(activa?' on':'');
+  if(lbl){ lbl.textContent=activa?'Activa':'Inactiva'; lbl.className='aw-label'+(activa?' on':' off'); }
+  if(num){ num.style.background=activa?'var(--verde)':'#DDD'; num.style.color=activa?'#fff':'var(--sub)'; }
+
+  // Restaurar toggle
+  const spinEl=document.getElementById('atog-'+key);
+  if(spinEl) spinEl.outerHTML=`<label class="aw-toggle" id="atog-${key}">
+    <input type="checkbox" ${activa?'checked':''} onchange="toggleSemana('${grado}',${periodo},${semana},this)">
+    <div class="aw-track"></div><div class="aw-thumb"></div>
+  </label>`;
+
+  // Actualizar contador
+  const activas=Object.entries(adminState.configs)
+    .filter(([k,v])=>k.startsWith(`${grado}-${periodo}-`)&&v.activa).length;
+  updateAdminCounter(activas);
 
   showToast(`Semana ${semana} ${activa?'activada ✅':'desactivada'}`,'success');
-
-  // Recargar contenido principal si es el grado/periodo actual
   if(grado===state.grado&&periodo===state.periodo) loadSemanas();
 }
 
