@@ -54,13 +54,13 @@ textarea{resize:vertical;min-height:80px}
 .op-list{display:flex;flex-direction:column;gap:7px}
 .op-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--brd);border-radius:8px;cursor:pointer;background:#fff;font-size:14px;width:100%;text-align:left}
 .op-btn:hover{border-color:var(--az);background:var(--az2)}
-.op-btn.selected{border-color:var(--az);background:var(--az2);font-weight:700}
+.op-btn.selected{border-color:var(--az);background:var(--az2);font-weight:700;border-width:2.5px}
 .op-letra{width:26px;height:26px;border-radius:50%;background:var(--az);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
 .vf-row{display:flex;gap:10px}
 .vf-btn{flex:1;padding:12px;border:1.5px solid var(--brd);border-radius:8px;cursor:pointer;font-size:15px;font-weight:700;text-align:center;background:#fff}
 .vf-btn:hover{border-color:var(--az);background:var(--az2)}
-.vf-btn.sel-v{border-color:var(--ve);background:var(--ve2);color:var(--ve)}
-.vf-btn.sel-f{border-color:var(--ro);background:var(--ro2);color:var(--ro)}
+.vf-btn.sel-v{border-color:#185FA5;background:#DCE8F5;color:#0C447C}
+.vf-btn.sel-f{border-color:#854F0B;background:#FAEEDA;color:#633806}
 .completar-txt{font-size:15px;line-height:2.4}
 .blank-input{border:none;border-bottom:2px solid var(--az);background:transparent;font-size:15px;padding:2px 4px;width:130px;text-align:center;color:var(--az);font-weight:700;font-family:Arial,sans-serif}
 .blank-input:focus{outline:none;border-bottom-color:var(--ve)}
@@ -356,6 +356,7 @@ async function confirmarRegistro(){
 
   S.est={nombre,orden,grado,seccion};
   S.view='examen';
+  S.currentQ=0;
   (S.examen.preguntas||[]).forEach((q,i)=>{ if(q.tipo==='ordenar') S.ordenItems[i]=[...q.items]; });
   render();
   if(S.examen.tiempo_minutos>0) startTimer(S.examen.tiempo_minutos);
@@ -364,21 +365,63 @@ async function confirmarRegistro(){
 // ── EXAMEN ─────────────────────────────────────────────────────
 function renderExamen(){
   const qs=S.examen.preguntas||[];
+  if(S.currentQ===undefined) S.currentQ=0;
+  const qi=Math.min(S.currentQ, qs.length-1);
   const resp_count=Object.keys(S.resp).length;
   document.getElementById('nav-sub').textContent=S.est.nombre+' · '+S.est.seccion;
   const pct=qs.length>0?Math.round(resp_count/qs.length*100):0;
+
+  // Navigator dots
+  let navDots=qs.map((_,i)=>{
+    const ans=S.resp[i]!==undefined&&S.resp[i]!==null&&S.resp[i]!=='';
+    const active=i===qi;
+    let bg=active?'#1B3A6B':(ans?'#1B5E20':'#ccc');
+    return `<div onclick="goToQ(${i})" style="width:${active?'28px':'10px'};height:10px;border-radius:5px;background:${bg};cursor:pointer;transition:.2s;flex-shrink:0"></div>`;
+  }).join('');
+
   let html=`
-  <div id="prog-label" style="font-size:13px;color:var(--sub);margin-bottom:6px">${resp_count} de ${qs.length} preguntas respondidas</div>
-  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:${pct}%"></div></div>`;
-  qs.forEach((q,i)=>{ html+=renderPregunta(q,i); });
-  const sin=qs.length-resp_count;
-  html+=`<div class="card" style="text-align:center">
-    <button class="btn btn-success" style="font-size:16px;padding:13px 30px" onclick="submitExamen(false)">Enviar examen</button>
-    <div style="font-size:12px;color:var(--sub);margin-top:8px">${sin>0?sin+' pregunta(s) sin responder':'Todas las preguntas respondidas'}</div>
+  <div style="background:#fff;border:1px solid var(--brd);border-radius:10px;padding:12px 14px;margin-bottom:12px;position:sticky;top:52px;z-index:10">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:13px;color:var(--sub)">Pregunta <strong style="color:var(--txt)">${qi+1}</strong> de <strong style="color:var(--txt)">${qs.length}</strong></span>
+      <span style="font-size:13px;color:var(--sub)">${resp_count} respondidas</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">${navDots}</div>
+    <div style="display:flex;gap:2px;margin-top:6px">
+      <div style="width:${pct}%;height:4px;background:#1B3A6B;border-radius:2px 0 0 2px"></div>
+      <div style="flex:1;height:4px;background:#e0e0e0;border-radius:0 2px 2px 0"></div>
+    </div>
   </div>`;
+
+  // Show ONLY current question
+  html += renderPregunta(qs[qi], qi);
+
+  // Navigation buttons
+  const isLast = qi === qs.length-1;
+  const answered = S.resp[qi]!==undefined && S.resp[qi]!==null && S.resp[qi]!=='';
+  html+=`<div style="display:flex;gap:10px;margin-top:4px">
+    ${qi>0?`<button class="btn btn-outline" style="flex:1" onclick="goToQ(${qi-1})">&#8592; Anterior</button>`:'<div style="flex:1"></div>'}
+    ${!isLast
+      ? `<button class="btn btn-primary" style="flex:2" onclick="goToQ(${qi+1})">${answered?'Siguiente &#8594;':'Omitir &#8594;'}</button>`
+      : `<button class="btn btn-success" style="flex:2;font-size:15px" onclick="submitExamen(false)">Enviar examen</button>`
+    }
+  </div>
+  <div style="font-size:12px;color:var(--sub);text-align:center;margin-top:8px">${qs.length-resp_count>0?qs.length-resp_count+' sin responder':'Todas respondidas'}</div>`;
+
   document.getElementById('main-content').innerHTML=html;
   document.querySelectorAll('.secure-txt').forEach(el=>secureEl(el));
   initDrag();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function goToQ(i){
+  // Save any open textarea first
+  document.querySelectorAll('.secure-txt').forEach(el=>{
+    if(el.id&&el.id.startsWith('txt_')){const qi=parseInt(el.id.split('_')[1]);if(el.value.trim())S.resp[qi]=el.value.trim();}
+    if(el.id&&el.id.startsWith('bl_')){const p=el.id.split('_');const qi=parseInt(p[1]),bi=parseInt(p[2]);if(!S.resp[qi])S.resp[qi]={};S.resp[qi][bi]=el.value.trim();}
+  });
+  const qs=S.examen.preguntas||[];
+  S.currentQ=Math.max(0,Math.min(i,qs.length-1));
+  renderExamen();
 }
 
 function renderPregunta(q,i){
@@ -389,8 +432,9 @@ function renderPregunta(q,i){
     case 'multiple':
       const L=['A','B','C','D'];
       inner='<div class="op-list">'+(q.opciones||[]).map((op,oi)=>`
-        <button class="op-btn${resp===oi?' selected':''}" onclick="setR(${i},${oi});updateProg()">
-          <div class="op-letra">${L[oi]}</div><span>${esc(op)}</span>
+        <button class="op-btn${resp===oi?' selected':''}" onclick="setR(${i},${oi});renderExamen()" style="${resp===oi?'border-width:2.5px;border-color:#1B3A6B;background:#DCE8F5;font-weight:700':''}">
+          <div class="op-letra" style="${resp===oi?'background:#1B3A6B;content:\"X\"':''}">${resp===oi?'&#10003;':L[oi]}</div>
+          <span>${esc(op)}</span>
         </button>`).join('')+'</div>'; break;
     case 'texto':
       inner=`<div class="secure-area">
@@ -434,13 +478,16 @@ function renderPregunta(q,i){
 function setR(qi,v){S.resp[qi]=v;}
 function setRBlank(qi,bi,v){if(!S.resp[qi])S.resp[qi]={};S.resp[qi][bi]=v;}
 function updateProg(){
+  // In step mode just update answer count in nav
   const qs=S.examen.preguntas||[];
   const n=Object.keys(S.resp).length;
-  const pct=qs.length>0?Math.round(n/qs.length*100):0;
-  const pf=document.getElementById('prog-fill');
-  const pl=document.getElementById('prog-label');
-  if(pf) pf.style.width=pct+'%';
-  if(pl) pl.textContent=n+' de '+qs.length+' preguntas respondidas';
+  // Update nav dots to reflect answered state
+  qs.forEach((_,i)=>{
+    const ans=S.resp[i]!==undefined&&S.resp[i]!==null&&S.resp[i]!=='';
+    const active=i===(S.currentQ||0);
+    const allDots=document.querySelectorAll('.nav-dots-wrapper>div');
+    if(allDots[i]){allDots[i].style.background=active?'#1B3A6B':(ans?'#1B5E20':'#ccc');}
+  });
 }
 
 function initDrag(){
