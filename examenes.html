@@ -565,7 +565,19 @@ async function buildExamenesTab(){
   let html=`<div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <span style="font-size:14px;color:var(--sub)">${S.examenes.length} examen(es)</span>
-      <button class="btn btn-primary btn-sm" onclick="S.adminExamen=null;S.qBuilders=[];S.view='admin-crear';render()">+ Nuevo examen</button>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="btn btn-gray btn-sm" onclick="mostrarImportJSON()">&#8593; Importar JSON</button>
+        <button class="btn btn-primary btn-sm" onclick="S.adminExamen=null;S.qBuilders=[];S.view='admin-crear';render()">+ Nuevo examen</button>
+      </div>
+    </div>
+    <div id="import-json-area" style="display:none;background:#F0F4F8;border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;color:var(--sub);margin-bottom:8px">Importar examen desde JSON</div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:8px">Pega el contenido del archivo .json:</div>
+      <textarea id="json-input" rows="5" style="font-size:12px;font-family:monospace" placeholder="{}"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-json-area').style.display='none'">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="procesarImportJSON()">Importar examen</button>
+      </div>
     </div>`;
   if(S.examenes.length===0) html+='<p style="color:var(--sub);text-align:center;padding:24px">Sin examenes todavia.</p>';
   else S.examenes.forEach(ex=>{
@@ -806,6 +818,7 @@ function renderAdminResp(){
     </div>
     <div class="btn-row" style="margin-bottom:16px">
       <button class="btn btn-success btn-sm" onclick="descargarExcel()">Descargar Excel</button>
+      <button class="btn btn-outline btn-sm" onclick="exportarWord()">Exportar Word</button>
       ${resps.length>0?`<button class="btn btn-warn btn-sm" onclick="archivarRespuestas()">Archivar y limpiar</button>`:''}
     </div>
     ${ex.rubrica_txt?`<div class="info-box" style="margin-bottom:12px"><strong>Rubrica:</strong> ${esc(ex.rubrica_txt)}</div>`:''}
@@ -1034,6 +1047,119 @@ async function guardarExamen(){
   S.qBuilders=[];
   toast(S.adminExamen?'Examen actualizado':'Examen creado');
   S.adminExamen=null; S.view='admin'; renderAdmin();
+}
+
+
+// ── IMPORT JSON ────────────────────────────────────────────────
+function mostrarImportJSON(){
+  const a=document.getElementById('import-json-area');
+  if(a) a.style.display=a.style.display==='none'?'block':'none';
+}
+async function procesarImportJSON(){
+  const txt=document.getElementById('json-input').value.trim();
+  if(!txt){toast('Pega el JSON del examen');return;}
+  let data;
+  try{ data=JSON.parse(txt); }
+  catch(e){ toast('JSON invalido: '+e.message,4000); return; }
+  if(!data.titulo||!Array.isArray(data.preguntas)){toast('El JSON no tiene el formato correcto (titulo + preguntas)');return;}
+  const payload={
+    titulo:data.titulo,
+    descripcion:data.descripcion||'',
+    grado:data.grado||'',
+    periodo:parseInt(data.periodo)||0,
+    tiempo_minutos:parseInt(data.tiempo_minutos)||0,
+    instrucciones:data.instrucciones||'',
+    rubrica_txt:data.rubrica_txt||'',
+    preguntas:data.preguntas,
+    secciones_activas:data.secciones_activas||[],
+    validar_lista:data.validar_lista||false,
+    activo:false,
+    updated_at:new Date().toISOString()
+  };
+  const {error}=await sb.from('examenes').insert(payload);
+  if(error){toast('Error al importar: '+error.message,4000);return;}
+  toast('Examen importado: '+data.titulo);
+  document.getElementById('import-json-area').style.display='none';
+  document.getElementById('json-input').value='';
+  S.adminTab='examenes'; renderAdmin();
+}
+
+// ── EXPORT WORD ────────────────────────────────────────────────
+function exportarWord(){
+  const ex=S.adminExamen;
+  const qs=ex.preguntas||[];
+  const TIPO_LABEL={multiple:'Opcion multiple',texto:'Respuesta abierta',vf:'Verdadero / Falso',completar:'Completar la frase',ordenar:'Ordenar elementos',escala:'Escala 1-5'};
+  const LETRAS=['A','B','C','D'];
+  let doc='';
+  // Header
+  doc+='EXAMEN\n';
+  doc+=ex.titulo+'\n';
+  doc+=ex.grado+' | Periodo '+ex.periodo+(ex.tiempo_minutos>0?' | Tiempo: '+ex.tiempo_minutos+' min':'')+'\n';
+  doc+='\n';
+  // Student info
+  doc+='Nombre: _________________________________________________\n';
+  doc+='Numero de orden: _____ Seccion: _____ Grado: _____\n';
+  doc+='Fecha: ___________________\n';
+  doc+='\n';
+  if(ex.instrucciones){
+    doc+='INSTRUCCIONES: '+ex.instrucciones+'\n\n';
+  }
+  doc+='='.repeat(60)+'\n\n';
+  // Questions
+  let totalPts=0;
+  qs.forEach((q,i)=>{
+    const pts=q.puntos||0;
+    totalPts+=pts;
+    doc+=(i+1)+'. ['+TIPO_LABEL[q.tipo]+' | '+pts+' pts]\n';
+    doc+=q.texto+'\n\n';
+    if(q.tipo==='multiple'){
+      (q.opciones||[]).forEach((op,oi)=>{
+        doc+='   ('+LETRAS[oi]+') '+op+'\n';
+      });
+      doc+='\n   Mi respuesta: ( )A  ( )B  ( )C  ( )D\n';
+    } else if(q.tipo==='vf'){
+      doc+='   ( ) Verdadero     ( ) Falso\n';
+    } else if(q.tipo==='completar'){
+      doc+='   [Completa los espacios en blanco en el texto]\n';
+    } else if(q.tipo==='ordenar'){
+      doc+='   Ordena los elementos del 1 al '+(q.items||[]).length+':\n';
+      (q.items||[]).forEach(it=>{ doc+='   ( ) '+it+'\n'; });
+    } else if(q.tipo==='escala'){
+      const lbs=q.etiquetas||['1','2','3','4','5'];
+      doc+='   Marca con X:\n';
+      doc+='   [ ] 1-'+lbs[0]+'  [ ] 2-'+lbs[1]+'  [ ] 3-'+lbs[2]+'  [ ] 4-'+lbs[3]+'  [ ] 5-'+lbs[4]+'\n';
+    } else if(q.tipo==='texto'){
+      doc+='   ________________________________________________________________\n';
+      doc+='   ________________________________________________________________\n';
+      doc+='   ________________________________________________________________\n';
+      doc+='   ________________________________________________________________\n';
+      doc+='   ________________________________________________________________\n';
+      doc+='   ________________________________________________________________\n';
+    }
+    doc+='\n';
+  });
+  doc+='='.repeat(60)+'\n';
+  doc+='TOTAL: '+totalPts+' puntos\n\n';
+  // Rubrica
+  if(ex.rubrica_txt||qs.some(q=>q.rubrica)){
+    doc+='RUBRICA (uso del docente)\n';
+    doc+='-'.repeat(40)+'\n';
+    if(ex.rubrica_txt) doc+='General: '+ex.rubrica_txt+'\n\n';
+    qs.forEach((q,i)=>{
+      if(q.rubrica) doc+='P'+(i+1)+': '+q.rubrica+'\n';
+      else if(q.tipo==='multiple'||q.tipo==='vf') doc+='P'+(i+1)+': Respuesta correcta: '+q.correcta+'\n';
+    });
+  }
+  // Download as .txt (opens in Word as plain text, fully editable)
+  const blob=new Blob([doc],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  const fecha=new Date().toISOString().substring(0,10);
+  a.download=ex.titulo+'_'+ex.grado+'_P'+ex.periodo+'_'+fecha+'.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Documento descargado');
 }
 
 // ── INIT ───────────────────────────────────────────────────────
