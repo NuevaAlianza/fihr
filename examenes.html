@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Examenes · Santo Cura de Ars</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --az:#1B3A6B;--az2:#DCE8F5;--ve:#1B5E20;--ve2:#E8F5E9;
+  --am:#7B5800;--am2:#FFF8DC;--ro:#B71C1C;--ro2:#FFEBEE;
+  --bg:#F0F4F8;--card:#fff;--txt:#1A1A1A;--sub:#555;--brd:#E0E0E0;
+  --warn:#E65100;--warn2:#FFF3E0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:15px}
+nav{background:var(--az);color:#fff;padding:0 16px;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.nav-title{font-size:16px;font-weight:700;flex:1}
+.nav-sub{font-size:12px;opacity:.7;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#timer-display{background:rgba(255,255,255,.15);border-radius:6px;padding:4px 12px;font-size:15px;font-weight:700;letter-spacing:.05em;display:none}
+#timer-display.warn{background:var(--warn);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.main{max-width:820px;margin:0 auto;padding:20px 14px}
+.card{background:var(--card);border-radius:12px;border:1px solid var(--brd);padding:22px;margin-bottom:14px}
+h2{font-size:17px;font-weight:700;color:var(--az);margin-bottom:12px}
+label{display:block;font-size:13px;font-weight:700;color:var(--sub);margin-bottom:4px;margin-top:10px}
+input[type=text],input[type=number],input[type=password],select,textarea{
+  width:100%;border:1.5px solid var(--brd);border-radius:8px;padding:10px 12px;
+  font-size:15px;font-family:Arial,sans-serif;background:#fff;color:var(--txt)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--az)}
+textarea{resize:vertical;min-height:80px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:9px 18px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:.15s}
+.btn-primary{background:var(--az);color:#fff}.btn-primary:hover{background:#15305A}
+.btn-success{background:var(--ve);color:#fff}.btn-success:hover{background:#145218}
+.btn-danger{background:var(--ro);color:#fff}
+.btn-warn{background:var(--warn);color:#fff}
+.btn-outline{background:transparent;color:var(--az);border:1.5px solid var(--az)}.btn-outline:hover{background:var(--az2)}
+.btn-gray{background:#ECEFF1;color:#37474F;border:none}
+.btn-sm{padding:6px 12px;font-size:13px}
+.btn-xs{padding:4px 8px;font-size:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.badge-on{background:var(--ve2);color:var(--ve)}
+.badge-off{background:var(--ro2);color:var(--ro)}
+.badge-gray{background:#ECEFF1;color:#37474F}
+.badge-am{background:var(--am2);color:var(--am)}
+/* Questions */
+.pregunta-card{background:#fff;border:1.5px solid var(--brd);border-radius:10px;padding:18px;margin-bottom:12px}
+.pregunta-num{display:inline-flex;align-items:center;justify-content:center;background:var(--az);color:#fff;border-radius:50%;width:26px;height:26px;font-size:13px;font-weight:700;margin-right:8px;flex-shrink:0}
+.pregunta-header{display:flex;align-items:flex-start;margin-bottom:12px}
+.pregunta-txt{font-size:15px;font-weight:700;line-height:1.5;flex:1}
+.pts-badge{flex-shrink:0;font-size:11px;background:var(--am2);color:var(--am);border-radius:4px;padding:2px 7px;font-weight:700;margin-left:8px}
+.op-list{display:flex;flex-direction:column;gap:7px}
+.op-btn{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--brd);border-radius:8px;cursor:pointer;background:#fff;font-size:14px;width:100%;text-align:left}
+.op-btn:hover{border-color:var(--az);background:var(--az2)}
+.op-btn.selected{border-color:var(--az);background:var(--az2);font-weight:700}
+.op-letra{width:26px;height:26px;border-radius:50%;background:var(--az);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.vf-row{display:flex;gap:10px}
+.vf-btn{flex:1;padding:12px;border:1.5px solid var(--brd);border-radius:8px;cursor:pointer;font-size:15px;font-weight:700;text-align:center;background:#fff}
+.vf-btn:hover{border-color:var(--az);background:var(--az2)}
+.vf-btn.sel-v{border-color:var(--ve);background:var(--ve2);color:var(--ve)}
+.vf-btn.sel-f{border-color:var(--ro);background:var(--ro2);color:var(--ro)}
+.completar-txt{font-size:15px;line-height:2.4}
+.blank-input{border:none;border-bottom:2px solid var(--az);background:transparent;font-size:15px;padding:2px 4px;width:130px;text-align:center;color:var(--az);font-weight:700;font-family:Arial,sans-serif}
+.blank-input:focus{outline:none;border-bottom-color:var(--ve)}
+.orden-list{display:flex;flex-direction:column;gap:6px}
+.orden-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--brd);border-radius:8px;background:#fff;cursor:grab;user-select:none}
+.orden-item:hover{border-color:var(--az);background:var(--az2)}
+.orden-item.dragging{opacity:.35;border-style:dashed}
+.orden-item.dragover{border-color:var(--ve);background:var(--ve2)}
+.orden-handle{color:#bbb;font-size:18px}
+.orden-pos{width:22px;height:22px;border-radius:50%;background:var(--az);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.escala-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.escala-btn{flex:1;min-width:46px;padding:10px 4px;border:1.5px solid var(--brd);border-radius:8px;text-align:center;cursor:pointer;background:#fff}
+.escala-btn:hover{border-color:var(--az);background:var(--az2)}
+.escala-btn.selected{border-color:var(--az);background:var(--az);color:#fff}
+.escala-num{font-size:18px;font-weight:700}
+.escala-lbl{font-size:11px;margin-top:2px}
+.progress-bar{height:6px;background:#e0e0e0;border-radius:3px;margin-bottom:18px}
+.progress-fill{height:100%;background:var(--az);border-radius:3px;transition:width .3s}
+.secure-area{position:relative}
+.secure-icon{position:absolute;top:8px;right:10px;font-size:11px;color:#aaa;background:#f5f5f5;border-radius:4px;padding:2px 6px;pointer-events:none}
+.secure-area textarea{padding-right:76px}
+/* Admin */
+.exam-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--brd);flex-wrap:wrap}
+.exam-row:last-child{border-bottom:none}
+.exam-info{flex:1;min-width:160px}
+.exam-name{font-weight:700;font-size:14px}
+.exam-meta{font-size:12px;color:var(--sub);margin-top:2px}
+.toggle-btn{width:50px;height:26px;border-radius:13px;border:none;cursor:pointer;position:relative;flex-shrink:0}
+.toggle-btn.on{background:var(--ve)}.toggle-btn.off{background:#ccc}
+.toggle-knob{position:absolute;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.25s}
+.toggle-btn.on .toggle-knob{left:27px}.toggle-btn.off .toggle-knob{left:3px}
+.sec-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.sec-chip{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--brd);background:#fff}
+.sec-chip.active{background:var(--az);color:#fff;border-color:var(--az)}
+.form-sec{border:1px solid var(--brd);border-radius:10px;padding:14px;margin-bottom:12px}
+.form-sec-title{font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.q-builder{border:1px solid #C5D5E8;border-radius:8px;padding:12px;margin-bottom:8px;background:#FAFBFF}
+.q-type-pill{display:inline-block;background:var(--az2);color:var(--az);font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-bottom:6px}
+.remove-q{float:right;background:var(--ro2);color:var(--ro);border:none;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer;font-weight:700}
+/* Lista estudiantes */
+.est-table{width:100%;border-collapse:collapse;font-size:13px}
+.est-table th{background:var(--az);color:#fff;padding:7px 10px;text-align:left;font-size:12px}
+.est-table td{padding:7px 10px;border-bottom:1px solid var(--brd)}
+.est-table tr:hover td{background:var(--az2)}
+/* Tabs admin */
+.admin-tabs{display:flex;gap:0;border-bottom:2px solid var(--az2);margin-bottom:18px}
+.admin-tab{padding:8px 16px;cursor:pointer;font-size:14px;font-weight:700;color:var(--sub);border-bottom:3px solid transparent;margin-bottom:-2px}
+.admin-tab.active{color:var(--az);border-bottom-color:var(--az)}
+/* Archive indicator */
+.archived-row{background:#FFFDE7}
+/* Enviado */
+.enviado-box{text-align:center;padding:36px 16px}
+.enviado-icon{font-size:52px;margin-bottom:12px}
+.enviado-title{font-size:22px;font-weight:700;color:var(--ve);margin-bottom:8px}
+/* toast */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--az);color:#fff;padding:10px 22px;border-radius:20px;font-size:14px;
+  font-weight:700;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#copy-toast{display:none;position:fixed;bottom:72px;left:50%;transform:translateX(-50%);
+  background:var(--warn);color:#fff;padding:10px 20px;border-radius:20px;font-size:14px;
+  font-weight:700;z-index:9999;pointer-events:none}
+/* info box */
+.info-box{background:var(--az2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--az);margin-bottom:12px}
+.warn-box{background:var(--warn2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--warn)}
+.success-box{background:var(--ve2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--ve)}
+@media(max-width:600px){
+  .op-btn{font-size:13px}.vf-row{flex-direction:column}.escala-btn{min-width:38px}
+  nav{gap:6px}
+}
+</style>
+</head>
+<body>
+<div id="copy-toast">Escribe tu respuesta — no se puede pegar</div>
+<nav>
+  <div class="nav-title">Examenes · Santo Cura de Ars</div>
+  <span class="nav-sub" id="nav-sub"></span>
+  <div id="timer-display"></div>
+  <button class="btn btn-sm" id="btn-admin"
+    style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35)"
+    onclick="showAdminLogin()">Admin</button>
+</nav>
+<div class="main" id="main-content"></div>
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://uazurfbmrnsadkrxutpo.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhenVyZmJtcm5zYWRrcnh1dHBvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NTY0NzEsImV4cCI6MjA2NzIzMjQ3MX0.GmBk4XRX0gVhw20gTGX8jM58mb2gXOFC7qkY8iMEU9k';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const SECCIONES = ['A','B','C','D','E'];
+
+const S = {
+  view:'inicio', examenes:[], examen:null,
+  est:{nombre:'',orden:0,grado:'',seccion:''},
+  resp:{}, ordenItems:{},
+  timerSec:0, timerStart:0, timerInterval:null,
+  adminAuth:false, adminTab:'examenes',
+  adminExamen:null, respuestas:[], listaEst:[],
+  qBuilders:[]
+};
+
+// ── SECURITY ──────────────────────────────────────────────────
+document.addEventListener('copy', e=>{
+  if(S.adminAuth) return;
+  e.preventDefault(); showCopyToast();
+});
+document.addEventListener('contextmenu', e=>{
+  if(S.adminAuth) return;
+  e.preventDefault(); showCopyToast();
+});
+function showCopyToast(){
+  const el=document.getElementById('copy-toast');
+  el.style.display='block';
+  clearTimeout(window._cpt);
+  window._cpt=setTimeout(()=>el.style.display='none',2500);
+}
+function secureEl(el){
+  if(!el) return;
+  el.addEventListener('paste', e=>{ e.preventDefault(); showCopyToast(); });
+  el.addEventListener('drop', e=>e.preventDefault());
+  el.addEventListener('contextmenu', e=>e.preventDefault());
+}
+
+// ── TOAST ──────────────────────────────────────────────────────
+function toast(msg,ms=2500){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(window._tt);
+  window._tt=setTimeout(()=>t.classList.remove('show'),ms);
+}
+
+// ── TIMER ──────────────────────────────────────────────────────
+function startTimer(min){
+  S.timerSec=min*60; S.timerStart=Date.now();
+  const d=document.getElementById('timer-display');
+  d.style.display='block';
+  clearInterval(S.timerInterval);
+  S.timerInterval=setInterval(()=>{
+    const rem=Math.max(0,S.timerSec-Math.floor((Date.now()-S.timerStart)/1000));
+    const m=Math.floor(rem/60), s=rem%60;
+    d.textContent=m+':'+(s<10?'0':'')+s;
+    if(rem<=300) d.classList.add('warn'); else d.classList.remove('warn');
+    if(rem===0){ clearInterval(S.timerInterval); submitExamen(true); }
+  },500);
+}
+function stopTimer(){
+  clearInterval(S.timerInterval);
+  document.getElementById('timer-display').style.display='none';
+}
+function tiempoUsado(){ return S.timerStart?Math.floor((Date.now()-S.timerStart)/1000):0; }
+
+// ── UTILS ──────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function normalizeName(s){ return String(s||'').toLowerCase().trim().replace(/\s+/g,' '); }
+function render(){
+  switch(S.view){
+    case 'inicio':      renderInicio(); break;
+    case 'registro':    renderRegistro(); break;
+    case 'examen':      renderExamen(); break;
+    case 'enviado':     renderEnviado(); break;
+    case 'admin-login': renderAdminLogin(); break;
+    case 'admin':       renderAdmin(); break;
+    case 'admin-crear': renderAdminCrear(); break;
+    case 'admin-resp':  renderAdminResp(); break;
+  }
+}
+
+// ── INICIO ─────────────────────────────────────────────────────
+async function renderInicio(){
+  document.getElementById('nav-sub').textContent='';
+  const {data}=await sb.from('examenes')
+    .select('id,titulo,descripcion,grado,periodo,tiempo_minutos,activo,secciones_activas,validar_lista')
+    .eq('activo',true).order('created_at',{ascending:false});
+  S.examenes=data||[];
+  let html='<div class="card">';
+  if(S.examenes.length===0){
+    html+='<div style="text-align:center;padding:40px 0;color:var(--sub)"><div style="font-size:40px;margin-bottom:12px">&#128197;</div><div style="font-size:16px;font-weight:700">No hay examenes activos</div><div style="font-size:13px;margin-top:6px">Consulta con tu docente.</div></div>';
+  } else {
+    html+='<h2>Examenes disponibles</h2>';
+    S.examenes.forEach(ex=>{
+      const secs=(ex.secciones_activas||[]);
+      const secsLabel=secs.length>0?'Secciones: '+secs.join(', '):'Todas las secciones';
+      html+=`<div class="exam-row">
+        <div class="exam-info">
+          <div class="exam-name">${esc(ex.titulo)}</div>
+          <div class="exam-meta">${esc(ex.grado)} · Periodo ${ex.periodo} · ${secsLabel}${ex.tiempo_minutos>0?' · '+ex.tiempo_minutos+' min':''}</div>
+          ${ex.validar_lista?'<div style="font-size:11px;color:var(--ve);margin-top:2px">Verificacion de lista activa</div>':''}
+        </div>
+        <button class="btn btn-primary" onclick="iniciarExamen('${ex.id}')">Comenzar</button>
+      </div>`;
+    });
+  }
+  html+='</div>';
+  document.getElementById('main-content').innerHTML=html;
+}
+
+// ── REGISTRO ───────────────────────────────────────────────────
+async function iniciarExamen(id){
+  const {data,error}=await sb.from('examenes').select('*').eq('id',id).single();
+  if(error||!data||!data.activo){toast('Examen no disponible');return;}
+  S.examen=data; S.resp={}; S.ordenItems={};
+  S.view='registro'; render();
+}
+
+function renderRegistro(){
+  const ex=S.examen;
+  document.getElementById('nav-sub').textContent=ex.titulo;
+  const secs=(ex.secciones_activas||[]);
+  const secOptions=secs.length>0
+    ? secs.map(s=>`<option value="${s}">${s}</option>`).join('')
+    : SECCIONES.map(s=>`<option value="${s}">${s}</option>`).join('');
+  document.getElementById('main-content').innerHTML=`
+  <div class="card" style="max-width:500px;margin:0 auto">
+    <h2>${esc(ex.titulo)}</h2>
+    ${ex.descripcion?`<div style="color:var(--sub);font-size:14px;margin-bottom:12px">${esc(ex.descripcion)}</div>`:''}
+    ${ex.instrucciones?`<div class="info-box"><strong>Instrucciones:</strong> ${esc(ex.instrucciones)}</div>`:''}
+    ${ex.validar_lista?'<div class="warn-box">Tu nombre y numero seran verificados contra la lista del curso. Escribe exactamente como aparece en tu lista.</div>':''}
+    <label>Nombre completo *</label>
+    <div class="secure-area">
+      <input type="text" id="r-nombre" maxlength="80" placeholder="Escribe tu nombre completo" autocomplete="off">
+      <span class="secure-icon">sin pegar</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div>
+        <label>Numero de orden *</label>
+        <input type="number" id="r-orden" min="1" max="50" placeholder="Ej: 12">
+      </div>
+      <div>
+        <label>Seccion *</label>
+        <select id="r-seccion"><option value="">-- Selecciona --</option>${secOptions}</select>
+      </div>
+    </div>
+    <label>Grado *</label>
+    <select id="r-grado">
+      <option value="">-- Selecciona --</option>
+      <option value="2do">2do Grado</option>
+      <option value="4to">4to Grado</option>
+      <option value="5to">5to Grado</option>
+      <option value="6to">6to Grado</option>
+    </select>
+    <div id="reg-error" style="display:none" class="warn-box" style="margin-top:10px"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="S.view='inicio';render()">Volver</button>
+      <button class="btn btn-primary" id="btn-comenzar" onclick="confirmarRegistro()">Comenzar examen</button>
+    </div>
+  </div>`;
+  secureEl(document.getElementById('r-nombre'));
+}
+
+async function confirmarRegistro(){
+  const nombre=document.getElementById('r-nombre').value.trim();
+  const orden=parseInt(document.getElementById('r-orden').value)||0;
+  const seccion=document.getElementById('r-seccion').value;
+  const grado=document.getElementById('r-grado').value;
+  const errEl=document.getElementById('reg-error');
+  const btn=document.getElementById('btn-comenzar');
+  function showErr(msg){errEl.style.display='block';errEl.textContent=msg;}
+  errEl.style.display='none';
+  if(!nombre||!seccion||!grado||orden<1){showErr('Completa todos los campos correctamente.');return;}
+  btn.disabled=true; btn.textContent='Verificando...';
+
+  // Check section restriction
+  const secs=S.examen.secciones_activas||[];
+  if(secs.length>0 && !secs.includes(seccion)){
+    showErr('Este examen no esta habilitado para la seccion '+seccion+'. Secciones autorizadas: '+secs.join(', '));
+    btn.disabled=false; btn.textContent='Comenzar examen'; return;
+  }
+
+  // Check student list if required
+  if(S.examen.validar_lista){
+    const {data:estFound}=await sb.from('estudiantes_lista')
+      .select('id,nombre,numero_orden').eq('grado',grado).eq('seccion',seccion)
+      .eq('numero_orden',orden).eq('activo',true);
+    if(!estFound||estFound.length===0){
+      showErr('El numero '+orden+' no esta registrado en la lista de '+grado+' seccion '+seccion+'. Verifica con tu docente.');
+      btn.disabled=false; btn.textContent='Comenzar examen'; return;
+    }
+    const match=estFound.find(e=>normalizeName(e.nombre).includes(normalizeName(nombre).split(' ')[0])||normalizeName(nombre).includes(normalizeName(e.nombre).split(' ')[0]));
+    if(!match){
+      showErr('El nombre no coincide con el numero '+orden+' en la lista. Nombre esperado: '+estFound[0].nombre);
+      btn.disabled=false; btn.textContent='Comenzar examen'; return;
+    }
+  }
+
+  // Check duplicate submission
+  const {data:dup}=await sb.from('respuestas_examenes').select('id')
+    .eq('examen_id',S.examen.id).eq('numero_orden',orden).eq('seccion',seccion).eq('grado',grado).limit(1);
+  if(dup&&dup.length>0){
+    showErr('Ya hay una respuesta registrada para el numero '+orden+' de la seccion '+seccion+'. Solo se permite un envio por estudiante.');
+    btn.disabled=false; btn.textContent='Comenzar examen'; return;
+  }
+
+  S.est={nombre,orden,grado,seccion};
+  S.view='examen';
+  (S.examen.preguntas||[]).forEach((q,i)=>{ if(q.tipo==='ordenar') S.ordenItems[i]=[...q.items]; });
+  render();
+  if(S.examen.tiempo_minutos>0) startTimer(S.examen.tiempo_minutos);
+}
+
+// ── EXAMEN ─────────────────────────────────────────────────────
+function renderExamen(){
+  const qs=S.examen.preguntas||[];
+  const resp_count=Object.keys(S.resp).length;
+  document.getElementById('nav-sub').textContent=S.est.nombre+' · '+S.est.seccion;
+  const pct=qs.length>0?Math.round(resp_count/qs.length*100):0;
+  let html=`
+  <div id="prog-label" style="font-size:13px;color:var(--sub);margin-bottom:6px">${resp_count} de ${qs.length} preguntas respondidas</div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:${pct}%"></div></div>`;
+  qs.forEach((q,i)=>{ html+=renderPregunta(q,i); });
+  const sin=qs.length-resp_count;
+  html+=`<div class="card" style="text-align:center">
+    <button class="btn btn-success" style="font-size:16px;padding:13px 30px" onclick="submitExamen(false)">Enviar examen</button>
+    <div style="font-size:12px;color:var(--sub);margin-top:8px">${sin>0?sin+' pregunta(s) sin responder':'Todas las preguntas respondidas'}</div>
+  </div>`;
+  document.getElementById('main-content').innerHTML=html;
+  document.querySelectorAll('.secure-txt').forEach(el=>secureEl(el));
+  initDrag();
+}
+
+function renderPregunta(q,i){
+  const resp=S.resp[i];
+  const answered=resp!==undefined&&resp!==null&&resp!=='';
+  let inner='';
+  switch(q.tipo){
+    case 'multiple':
+      const L=['A','B','C','D'];
+      inner='<div class="op-list">'+(q.opciones||[]).map((op,oi)=>`
+        <button class="op-btn${resp===oi?' selected':''}" onclick="setR(${i},${oi});updateProg()">
+          <div class="op-letra">${L[oi]}</div><span>${esc(op)}</span>
+        </button>`).join('')+'</div>'; break;
+    case 'texto':
+      inner=`<div class="secure-area">
+        <textarea class="secure-txt" id="txt_${i}" rows="4" placeholder="Escribe tu respuesta aqui..."
+          oninput="setR(${i},this.value);updateProg()">${esc(resp||'')}</textarea>
+        <span class="secure-icon">sin pegar</span></div>`; break;
+    case 'vf':
+      inner=`<div class="vf-row">
+        <button class="vf-btn${resp==='V'?' sel-v':''}" onclick="setR(${i},'V');renderExamen()">Verdadero</button>
+        <button class="vf-btn${resp==='F'?' sel-f':''}" onclick="setR(${i},'F');renderExamen()">Falso</button>
+      </div>`; break;
+    case 'completar':
+      let txt=esc(q.texto||''); let bi=0;
+      txt=txt.replace(/___/g,()=>{ const b=bi++; const v=(resp&&resp[b])||'';
+        return `<input type="text" class="blank-input secure-txt" id="bl_${i}_${b}" value="${esc(v)}" placeholder="?" oninput="setRBlank(${i},${b},this.value)" maxlength="60">`; });
+      inner=`<div class="completar-txt">${txt}</div>`; break;
+    case 'ordenar':
+      const items=S.ordenItems[i]||q.items||[];
+      inner=`<div class="orden-list" id="ord_${i}">`+items.map((it,ii)=>`
+        <div class="orden-item" draggable="true" data-q="${i}" data-ii="${ii}">
+          <span class="orden-handle">&#8801;</span>
+          <div class="orden-pos">${ii+1}</div>
+          <span>${esc(it)}</span>
+        </div>`).join('')+'</div>'; break;
+    case 'escala':
+      const lbs=q.etiquetas||['1','2','3','4','5'];
+      inner=`<div class="escala-row">`+[1,2,3,4,5].map(n=>`
+        <button class="escala-btn${resp===n?' selected':''}" onclick="setR(${i},${n});renderExamen()">
+          <div class="escala-num">${n}</div>
+          <div class="escala-lbl">${esc(lbs[n-1]||n)}</div>
+        </button>`).join('')+'</div>'; break;
+  }
+  return `<div class="pregunta-card" style="border-color:${answered?'var(--ve)':'var(--brd)'}">
+    <div class="pregunta-header">
+      <span class="pregunta-num">${i+1}</span>
+      <span class="pregunta-txt">${esc(q.texto||'')}</span>
+      ${q.puntos?`<span class="pts-badge">${q.puntos} pts</span>`:''}
+    </div>${inner}</div>`;
+}
+
+function setR(qi,v){S.resp[qi]=v;}
+function setRBlank(qi,bi,v){if(!S.resp[qi])S.resp[qi]={};S.resp[qi][bi]=v;}
+function updateProg(){
+  const qs=S.examen.preguntas||[];
+  const n=Object.keys(S.resp).length;
+  const pct=qs.length>0?Math.round(n/qs.length*100):0;
+  const pf=document.getElementById('prog-fill');
+  const pl=document.getElementById('prog-label');
+  if(pf) pf.style.width=pct+'%';
+  if(pl) pl.textContent=n+' de '+qs.length+' preguntas respondidas';
+}
+
+function initDrag(){
+  document.querySelectorAll('.orden-list').forEach(list=>{
+    const qi=parseInt(list.id.split('_')[1]);
+    let src=null;
+    list.querySelectorAll('.orden-item').forEach(item=>{
+      item.addEventListener('dragstart',e=>{src=item;item.classList.add('dragging');});
+      item.addEventListener('dragend',()=>item.classList.remove('dragging'));
+      item.addEventListener('dragover',e=>{e.preventDefault();item.classList.add('dragover');});
+      item.addEventListener('dragleave',()=>item.classList.remove('dragover'));
+      item.addEventListener('drop',e=>{
+        e.preventDefault(); item.classList.remove('dragover');
+        if(!src||src===item) return;
+        const items=Array.from(list.querySelectorAll('.orden-item'));
+        const fi=items.indexOf(src), ti=items.indexOf(item);
+        const arr=[...S.ordenItems[qi]];
+        const [mv]=arr.splice(fi,1); arr.splice(ti,0,mv);
+        S.ordenItems[qi]=arr; S.resp[qi]=[...arr];
+        list.innerHTML=arr.map((it,ii)=>`
+          <div class="orden-item" style="border-color:var(--ve)" draggable="true" data-q="${qi}" data-ii="${ii}">
+            <span class="orden-handle">&#8801;</span>
+            <div class="orden-pos">${ii+1}</div><span>${esc(it)}</span>
+          </div>`).join('');
+        initDrag(); updateProg();
+      });
+    });
+  });
+}
+
+async function submitExamen(auto){
+  if(!auto){
+    const qs=S.examen.preguntas||[];
+    const sin=qs.length-Object.keys(S.resp).length;
+    if(sin>0&&!confirm('Tienes '+sin+' pregunta(s) sin responder. ¿Enviar de todas formas?')) return;
+  }
+  stopTimer();
+  // Collect remaining text
+  document.querySelectorAll('.secure-txt').forEach(el=>{
+    if(el.id&&el.id.startsWith('txt_')){const qi=parseInt(el.id.split('_')[1]);if(el.value.trim())S.resp[qi]=el.value.trim();}
+    if(el.id&&el.id.startsWith('bl_')){const p=el.id.split('_');const qi=parseInt(p[1]),bi=parseInt(p[2]);if(!S.resp[qi])S.resp[qi]={};S.resp[qi][bi]=el.value.trim();}
+  });
+  const {error}=await sb.from('respuestas_examenes').insert({
+    examen_id:S.examen.id, nombre:S.est.nombre, numero_orden:parseInt(S.est.orden)||0,
+    grado:S.est.grado, seccion:S.est.seccion, respuestas:S.resp, tiempo_usado_seg:tiempoUsado()
+  });
+  if(error){toast('Error al guardar: '+error.message,4000);return;}
+  S.view='enviado'; render();
+}
+
+// ── ENVIADO ────────────────────────────────────────────────────
+function renderEnviado(){
+  document.getElementById('main-content').innerHTML=`
+  <div class="card enviado-box">
+    <div class="enviado-icon">&#10003;</div>
+    <div class="enviado-title">Examen enviado</div>
+    <p style="color:var(--sub);margin-bottom:16px">Tus respuestas fueron guardadas, ${esc(S.est.nombre)}.</p>
+    <div class="success-box" style="display:inline-block;text-align:left">
+      <div><strong>Examen:</strong> ${esc(S.examen.titulo)}</div>
+      <div><strong>Grado/Seccion:</strong> ${esc(S.est.grado)} — ${esc(S.est.seccion)} · Orden: ${S.est.orden}</div>
+    </div>
+    <div style="margin-top:20px"><button class="btn btn-outline" onclick="S.view='inicio';render()">Volver al inicio</button></div>
+  </div>`;
+}
+
+// ── ADMIN LOGIN ────────────────────────────────────────────────
+function showAdminLogin(){
+  if(S.adminAuth){S.view='admin';render();return;}
+  S.view='admin-login'; render();
+}
+function renderAdminLogin(){
+  document.getElementById('main-content').innerHTML=`
+  <div class="card" style="max-width:360px;margin:40px auto">
+    <h2>Acceso administrador</h2>
+    <label>PIN</label>
+    <input type="password" id="pin-in" maxlength="10" placeholder="Ingresa el PIN" onkeydown="if(event.key==='Enter')checkPin()">
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="S.view='inicio';render()">Cancelar</button>
+      <button class="btn btn-primary" onclick="checkPin()">Ingresar</button>
+    </div>
+  </div>`;
+}
+async function checkPin(){
+  const pin=document.getElementById('pin-in').value;
+  const hash=await sha256(pin);
+  const {data}=await sb.from('admin_config').select('pin_hash').single();
+  if(data&&data.pin_hash===hash){
+    S.adminAuth=true;
+    document.getElementById('btn-admin').textContent='Salir';
+    document.getElementById('btn-admin').onclick=adminLogout;
+    S.view='admin'; render();
+  } else { toast('PIN incorrecto'); }
+}
+function adminLogout(){ S.adminAuth=false; S.view='inicio'; document.getElementById('btn-admin').textContent='Admin'; document.getElementById('btn-admin').onclick=showAdminLogin; render(); }
+async function sha256(m){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+
+// ── ADMIN ─────────────────────────────────────────────────────
+async function renderAdmin(){
+  let tabContent='';
+  if(S.adminTab==='examenes') tabContent=await buildExamenesTab();
+  else if(S.adminTab==='lista') tabContent=await buildListaTab();
+  else if(S.adminTab==='historial') tabContent=await buildHistorialTab();
+
+  document.getElementById('main-content').innerHTML=`
+  <div class="card" style="padding-bottom:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+      <h2 style="margin:0">Panel de administracion</h2>
+    </div>
+    <div class="admin-tabs">
+      <div class="admin-tab${S.adminTab==='examenes'?' active':''}" onclick="S.adminTab='examenes';renderAdmin()">Examenes</div>
+      <div class="admin-tab${S.adminTab==='lista'?' active':''}" onclick="S.adminTab='lista';renderAdmin()">Lista de estudiantes</div>
+      <div class="admin-tab${S.adminTab==='historial'?' active':''}" onclick="S.adminTab='historial';renderAdmin()">Historial archivado</div>
+    </div>
+  </div>
+  <div id="tab-content">${tabContent}</div>`;
+}
+
+// ── TAB: EXAMENES ──────────────────────────────────────────────
+async function buildExamenesTab(){
+  const {data}=await sb.from('examenes').select('id,titulo,grado,periodo,activo,tiempo_minutos,secciones_activas,validar_lista,created_at').order('created_at',{ascending:false});
+  S.examenes=data||[];
+  let html=`<div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <span style="font-size:14px;color:var(--sub)">${S.examenes.length} examen(es)</span>
+      <button class="btn btn-primary btn-sm" onclick="S.adminExamen=null;S.qBuilders=[];S.view='admin-crear';render()">+ Nuevo examen</button>
+    </div>`;
+  if(S.examenes.length===0) html+='<p style="color:var(--sub);text-align:center;padding:24px">Sin examenes todavia.</p>';
+  else S.examenes.forEach(ex=>{
+    const secs=(ex.secciones_activas||[]);
+    const secsLabel=secs.length>0?'Sec: '+secs.join(','):'Todas las secciones';
+    html+=`<div class="exam-row">
+      <div class="exam-info">
+        <div class="exam-name">${esc(ex.titulo)}</div>
+        <div class="exam-meta">${esc(ex.grado)} · P${ex.periodo} · ${secsLabel}${ex.tiempo_minutos>0?' · '+ex.tiempo_minutos+'min':''}</div>
+        <div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">
+          <span class="badge ${ex.activo?'badge-on':'badge-off'}">${ex.activo?'Activo':'Cerrado'}</span>
+          ${ex.validar_lista?'<span class="badge badge-am">Verifica lista</span>':''}
+        </div>
+      </div>
+      <button class="toggle-btn ${ex.activo?'on':'off'}" onclick="toggleActivo('${ex.id}',${ex.activo})" title="Abrir/Cerrar">
+        <div class="toggle-knob"></div>
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="verRespuestas('${ex.id}')">Respuestas</button>
+      <button class="btn btn-gray btn-sm" onclick="editarExamen('${ex.id}')">Editar</button>
+      <button class="btn btn-xs" style="background:var(--ro2);color:var(--ro);border:none;font-weight:700;cursor:pointer;border-radius:6px" onclick="eliminarExamen('${ex.id}','${esc(ex.titulo)}')">&#10005;</button>
+    </div>`;
+  });
+  html+='</div>';
+  return html;
+}
+
+async function toggleActivo(id,actual){
+  await sb.from('examenes').update({activo:!actual,updated_at:new Date().toISOString()}).eq('id',id);
+  toast(actual?'Examen cerrado':'Examen abierto');
+  S.adminTab='examenes'; renderAdmin();
+}
+async function eliminarExamen(id,titulo){
+  if(!confirm('Eliminar "'+titulo+'" y TODAS sus respuestas? Esta accion no se puede deshacer.')) return;
+  await sb.from('examenes').delete().eq('id',id);
+  toast('Eliminado'); renderAdmin();
+}
+async function editarExamen(id){
+  const {data}=await sb.from('examenes').select('*').eq('id',id).single();
+  S.adminExamen=data; S.qBuilders=[...(data.preguntas||[])];
+  S.view='admin-crear'; render();
+}
+
+// ── TAB: LISTA DE ESTUDIANTES ──────────────────────────────────
+async function buildListaTab(){
+  const {data}=await sb.from('estudiantes_lista').select('*').order('grado').order('seccion').order('numero_orden');
+  S.listaEst=data||[];
+  const grados=['2do','4to','5to','6to'];
+  const secs=['A','B','C','D'];
+  let html=`<div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <span style="font-size:14px;color:var(--sub)">${S.listaEst.length} estudiante(s) registrado(s)</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="mostrarImportarLista()">Importar CSV/Excel</button>
+        <button class="btn btn-primary btn-sm" onclick="agregarEstudiante()">+ Agregar uno</button>
+      </div>
+    </div>
+    <div id="import-area" style="display:none" class="form-sec">
+      <div class="form-sec-title">Importar lista desde CSV</div>
+      <div class="info-box" style="margin-bottom:10px">Formato CSV: <strong>grado,seccion,numero_orden,nombre</strong><br>Ejemplo: 5to,A,1,Juan Perez Santos</div>
+      <textarea id="csv-input" rows="6" placeholder="2do,A,1,Maria Garcia Lopez&#10;2do,A,2,Carlos Martinez Perez&#10;5to,B,1,Ana Rodriguez Gomez"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-area').style.display='none'">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="procesarCSV()">Importar</button>
+      </div>
+    </div>
+    <div id="add-est-area" style="display:none" class="form-sec">
+      <div class="form-sec-title">Agregar estudiante</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div><label>Grado</label><select id="ae-grado">${grados.map(g=>`<option>${g}</option>`).join('')}</select></div>
+        <div><label>Seccion</label><select id="ae-sec">${secs.map(s=>`<option>${s}</option>`).join('')}</select></div>
+        <div><label>Numero</label><input type="number" id="ae-num" min="1" max="50"></div>
+      </div>
+      <label>Nombre completo</label>
+      <input type="text" id="ae-nombre" placeholder="Nombre Apellido Apellido" maxlength="80">
+      <div class="btn-row">
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('add-est-area').style.display='none'">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="guardarEstudiante()">Guardar</button>
+      </div>
+    </div>`;
+
+  // Group by grado+seccion
+  const grupos={};
+  S.listaEst.forEach(e=>{
+    const k=e.grado+'-'+e.seccion;
+    if(!grupos[k]) grupos[k]={grado:e.grado,seccion:e.seccion,items:[]};
+    grupos[k].items.push(e);
+  });
+
+  if(Object.keys(grupos).length===0){
+    html+='<p style="color:var(--sub);text-align:center;padding:20px">Sin estudiantes. Importa una lista o agrega uno.</p>';
+  } else {
+    Object.values(grupos).forEach(g=>{
+      html+=`<div style="margin-bottom:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--az);margin-bottom:6px">${g.grado} — Seccion ${g.seccion} <span class="badge badge-gray">${g.items.length}</span>
+          <button class="btn btn-xs btn-danger" style="margin-left:8px" onclick="borrarSeccion('${g.grado}','${g.seccion}')">Borrar seccion</button>
+        </div>
+        <table class="est-table"><thead><tr><th>#</th><th>Nombre</th><th></th></tr></thead><tbody>
+        ${g.items.map(e=>`<tr>
+          <td>${e.numero_orden}</td>
+          <td>${esc(e.nombre)}</td>
+          <td><button class="btn btn-xs" style="background:var(--ro2);color:var(--ro);border:none;cursor:pointer;border-radius:4px" onclick="borrarEstudiante('${e.id}')">&#10005;</button></td>
+        </tr>`).join('')}
+        </tbody></table>
+      </div>`;
+    });
+  }
+  html+='</div>';
+  return html;
+}
+
+function mostrarImportarLista(){
+  const a=document.getElementById('import-area');
+  a.style.display=a.style.display==='none'?'block':'none';
+}
+function agregarEstudiante(){
+  const a=document.getElementById('add-est-area');
+  a.style.display=a.style.display==='none'?'block':'none';
+}
+async function procesarCSV(){
+  const txt=document.getElementById('csv-input').value.trim();
+  if(!txt){toast('Pega el contenido CSV');return;}
+  const lines=txt.split('\n').filter(l=>l.trim());
+  const rows=[];
+  const errores=[];
+  lines.forEach((line,i)=>{
+    const parts=line.split(',').map(p=>p.trim());
+    if(parts.length<4){errores.push('Linea '+(i+1)+': formato incorrecto');return;}
+    const [grado,seccion,num,...rest]=parts;
+    const nombre=rest.join(' ').trim();
+    const numero=parseInt(num);
+    if(!grado||!seccion||!numero||!nombre){errores.push('Linea '+(i+1)+': datos incompletos');return;}
+    rows.push({grado,seccion:seccion.toUpperCase(),numero_orden:numero,nombre,activo:true});
+  });
+  if(errores.length>0){toast(errores.length+' errores: '+errores[0],4000);return;}
+  const {error}=await sb.from('estudiantes_lista').upsert(rows,{onConflict:'grado,seccion,numero_orden',ignoreDuplicates:false});
+  if(error){toast('Error: '+error.message,4000);return;}
+  toast(rows.length+' estudiantes importados');
+  document.getElementById('import-area').style.display='none';
+  S.adminTab='lista'; renderAdmin();
+}
+async function guardarEstudiante(){
+  const grado=document.getElementById('ae-grado').value;
+  const seccion=document.getElementById('ae-sec').value;
+  const orden=parseInt(document.getElementById('ae-num').value)||0;
+  const nombre=document.getElementById('ae-nombre').value.trim();
+  if(!nombre||orden<1){toast('Completa todos los campos');return;}
+  const {error}=await sb.from('estudiantes_lista').upsert({grado,seccion,numero_orden:orden,nombre,activo:true},{onConflict:'grado,seccion,numero_orden'});
+  if(error){toast('Error: '+error.message);return;}
+  toast('Estudiante guardado');
+  document.getElementById('add-est-area').style.display='none';
+  S.adminTab='lista'; renderAdmin();
+}
+async function borrarEstudiante(id){
+  if(!confirm('Eliminar este estudiante de la lista?')) return;
+  await sb.from('estudiantes_lista').delete().eq('id',id);
+  S.adminTab='lista'; renderAdmin();
+}
+async function borrarSeccion(grado,seccion){
+  if(!confirm('Borrar todos los estudiantes de '+grado+' seccion '+seccion+'?')) return;
+  await sb.from('estudiantes_lista').delete().eq('grado',grado).eq('seccion',seccion);
+  toast('Seccion borrada'); S.adminTab='lista'; renderAdmin();
+}
+
+// ── TAB: HISTORIAL ARCHIVADO ───────────────────────────────────
+async function buildHistorialTab(){
+  const {data}=await sb.from('respuestas_archivadas').select('*').order('archived_at',{ascending:false}).limit(200);
+  const arch=data||[];
+  let html=`<div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <span style="font-size:14px;color:var(--sub)">${arch.length} respuestas archivadas</span>
+      ${arch.length>0?`<div style="display:flex;gap:8px">
+        <button class="btn btn-success btn-sm" onclick="descargarHistorial()">Descargar Excel</button>
+        <button class="btn btn-danger btn-sm" onclick="borrarHistorial()">Borrar historial</button>
+      </div>`:''}
+    </div>`;
+  if(arch.length===0){
+    html+='<p style="color:var(--sub);text-align:center;padding:20px">Sin registros archivados todavia.</p>';
+  } else {
+    const porExamen={};
+    arch.forEach(r=>{ const k=r.examen_titulo||r.examen_id; if(!porExamen[k])porExamen[k]=[]; porExamen[k].push(r); });
+    Object.entries(porExamen).forEach(([titulo,rows])=>{
+      html+=`<div style="margin-bottom:14px">
+        <div style="font-weight:700;font-size:13px;color:var(--az);margin-bottom:6px">${esc(titulo)} <span class="badge badge-gray">${rows.length}</span></div>
+        <table class="est-table"><thead><tr><th>Nombre</th><th>Sec</th><th>Orden</th><th>Archivado</th></tr></thead><tbody>
+        ${rows.slice(0,10).map(r=>`<tr class="archived-row">
+          <td>${esc(r.nombre)}</td><td>${esc(r.seccion)}</td><td>${r.numero_orden}</td>
+          <td style="font-size:11px">${(r.archived_at||'').substring(0,16)}</td>
+        </tr>`).join('')}
+        ${rows.length>10?`<tr><td colspan="4" style="color:var(--sub);font-size:12px;text-align:center">... y ${rows.length-10} mas</td></tr>`:''}
+        </tbody></table>
+      </div>`;
+    });
+  }
+  html+='</div>';
+  return html;
+}
+
+function descargarHistorial(){
+  const arch=S.respuestas||[];
+  // Re-fetch from DOM not ideal, just trigger page download
+  toast('Descargando historial...');
+  sb.from('respuestas_archivadas').select('*').order('archived_at',{ascending:false}).then(({data})=>{
+    if(!data||data.length===0){toast('Sin datos');return;}
+    const wb=XLSX.utils.book_new();
+    const headers=['Examen','Grado','Periodo','Nombre','Orden','Seccion','Tiempo(seg)','Enviado','Archivado'];
+    const rows=[headers,...data.map(r=>[r.examen_titulo,r.examen_grado,r.examen_periodo,r.nombre,r.numero_orden,r.seccion,r.tiempo_usado_seg,(r.submitted_at||'').substring(0,16),(r.archived_at||'').substring(0,16)])];
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=headers.map(()=>({wch:18}));
+    XLSX.utils.book_append_sheet(wb,ws,'Historial');
+    const fecha=new Date().toISOString().substring(0,10);
+    XLSX.writeFile(wb,'historial_examenes_'+fecha+'.xlsx');
+  });
+}
+async function borrarHistorial(){
+  if(!confirm('Borrar PERMANENTEMENTE todo el historial archivado? Esta accion no se puede deshacer.')) return;
+  if(!confirm('Confirma: borrar TODO el historial?')) return;
+  await sb.from('respuestas_archivadas').delete().neq('id','00000000-0000-0000-0000-000000000000');
+  toast('Historial borrado'); S.adminTab='historial'; renderAdmin();
+}
+
+// ── VER RESPUESTAS (activas) ───────────────────────────────────
+async function verRespuestas(id){
+  const {data:ex}=await sb.from('examenes').select('*').eq('id',id).single();
+  const {data:resp}=await sb.from('respuestas_examenes').select('*').eq('examen_id',id).order('submitted_at',{ascending:true});
+  S.adminExamen=ex; S.respuestas=resp||[];
+  S.view='admin-resp'; render();
+}
+
+function renderAdminResp(){
+  const ex=S.adminExamen;
+  const qs=ex.preguntas||[];
+  const resps=S.respuestas;
+  let html=`<div class="card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" onclick="S.view='admin';renderAdmin()">&#8592; Volver</button>
+      <h2 style="margin:0;flex:1">${esc(ex.titulo)}</h2>
+      <span class="badge badge-gray">${resps.length} enviadas</span>
+    </div>
+    <div class="btn-row" style="margin-bottom:16px">
+      <button class="btn btn-success btn-sm" onclick="descargarExcel()">Descargar Excel</button>
+      ${resps.length>0?`<button class="btn btn-warn btn-sm" onclick="archivarRespuestas()">Archivar y limpiar</button>`:''}
+    </div>
+    ${ex.rubrica_txt?`<div class="info-box" style="margin-bottom:12px"><strong>Rubrica:</strong> ${esc(ex.rubrica_txt)}</div>`:''}
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="background:var(--az);color:#fff">
+      <th style="padding:8px;text-align:left">Nombre</th><th style="padding:8px">Ord</th>
+      <th style="padding:8px">Sec</th><th style="padding:8px">Grado</th>
+      ${qs.map((_,i)=>`<th style="padding:8px">P${i+1}</th>`).join('')}
+      <th style="padding:8px">Tiempo</th><th style="padding:8px">Enviado</th>
+    </tr></thead><tbody>`;
+  resps.forEach((r,ri)=>{
+    html+=`<tr style="background:${ri%2?'#F5F5F5':'#fff'}">
+      <td style="padding:7px;font-weight:700">${esc(r.nombre)}</td>
+      <td style="padding:7px;text-align:center">${r.numero_orden}</td>
+      <td style="padding:7px;text-align:center">${esc(r.seccion)}</td>
+      <td style="padding:7px;text-align:center">${esc(r.grado)}</td>`;
+    qs.forEach((_,qi)=>{
+      let v=r.respuestas[qi];
+      let d=v===undefined?'—':(typeof v==='object'?JSON.stringify(v):String(v));
+      if(d.length>35) d=d.substring(0,35)+'...';
+      html+=`<td style="padding:7px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(String(v||''))}">${esc(d)}</td>`;
+    });
+    const m=Math.floor((r.tiempo_usado_seg||0)/60),s=(r.tiempo_usado_seg||0)%60;
+    html+=`<td style="padding:7px;text-align:center">${m}:${s<10?'0':''}${s}</td>
+      <td style="padding:7px;font-size:11px;white-space:nowrap">${(r.submitted_at||'').substring(0,16)}</td>
+    </tr>`;
+  });
+  html+=`</tbody></table></div></div>`;
+  document.getElementById('main-content').innerHTML=html;
+}
+
+function descargarExcel(){
+  const ex=S.adminExamen; const qs=ex.preguntas||[]; const resps=S.respuestas;
+  const wb=XLSX.utils.book_new();
+  // Respuestas
+  const h1=['Nombre','Orden','Seccion','Grado','Tiempo(seg)','Enviado'];
+  qs.forEach((q,i)=>h1.push('P'+(i+1)+': '+(q.texto||'').substring(0,40)));
+  const rows=[h1];
+  resps.forEach(r=>{
+    const row=[r.nombre,r.numero_orden,r.seccion,r.grado,r.tiempo_usado_seg||0,(r.submitted_at||'').substring(0,16)];
+    qs.forEach((_,qi)=>{ const v=r.respuestas[qi]; row.push(v===undefined?'':(typeof v==='object'?JSON.stringify(v):String(v))); });
+    rows.push(row);
+  });
+  const ws1=XLSX.utils.aoa_to_sheet(rows);
+  ws1['!cols']=h1.map((_,i)=>({wch:i<6?16:45}));
+  XLSX.utils.book_append_sheet(wb,ws1,'Respuestas');
+  // Rubrica
+  const h2=['#','Tipo','Pregunta','Puntos','Criterios'];
+  const rub=[h2,...qs.map((q,i)=>[i+1,q.tipo,q.texto||'',q.puntos||0,q.rubrica||(q.tipo==='vf'?'Correcta: '+q.correcta:q.tipo==='multiple'?'Correcta: '+q.correcta:'—')])];
+  if(ex.rubrica_txt) rub.push(['','','Rubrica general:','',ex.rubrica_txt]);
+  const ws2=XLSX.utils.aoa_to_sheet(rub);
+  ws2['!cols']=[{wch:4},{wch:14},{wch:50},{wch:8},{wch:60}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Rubrica');
+  const fecha=new Date().toISOString().substring(0,10);
+  XLSX.writeFile(wb,ex.titulo+'_'+ex.grado+'_P'+ex.periodo+'_'+fecha+'.xlsx');
+  toast('Excel descargado');
+}
+
+async function archivarRespuestas(){
+  if(!confirm('Archivar las '+S.respuestas.length+' respuestas y borrarlas de la vista activa? Quedan guardadas en el historial.')) return;
+  const ex=S.adminExamen;
+  // Copy to archive
+  const archivos=S.respuestas.map(r=>({
+    original_id:r.id, examen_id:r.examen_id,
+    examen_titulo:ex.titulo, examen_grado:ex.grado, examen_periodo:ex.periodo,
+    nombre:r.nombre, numero_orden:r.numero_orden, grado:r.grado, seccion:r.seccion,
+    respuestas:r.respuestas, tiempo_usado_seg:r.tiempo_usado_seg, submitted_at:r.submitted_at
+  }));
+  const {error:e1}=await sb.from('respuestas_archivadas').insert(archivos);
+  if(e1){toast('Error al archivar: '+e1.message,4000);return;}
+  // Delete from active
+  const ids=S.respuestas.map(r=>r.id);
+  await sb.from('respuestas_examenes').delete().in('id',ids);
+  toast(archivos.length+' respuestas archivadas');
+  S.view='admin'; S.adminTab='examenes'; renderAdmin();
+}
+
+// ── CREAR / EDITAR EXAMEN ─────────────────────────────────────
+function renderAdminCrear(){
+  const ex=S.adminExamen;
+  const GRADOS=['2do','4to','5to','6to'];
+  const secs=ex?.secciones_activas||[];
+  let html=`<div class="card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button class="btn btn-outline btn-sm" onclick="S.view='admin';S.qBuilders=[];render()">&#8592; Volver</button>
+      <h2 style="margin:0">${ex?'Editar examen':'Nuevo examen'}</h2>
+    </div>
+    <div class="form-sec">
+      <div class="form-sec-title">Informacion general</div>
+      <label>Titulo del examen</label>
+      <input type="text" id="f-titulo" value="${esc(ex?.titulo||'')}" placeholder="Ej: Examen P3 — Codigo Etico Tecnologico">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div><label>Grado</label>
+          <select id="f-grado">${GRADOS.map(g=>`<option ${ex?.grado===g?'selected':''}>${g}</option>`).join('')}</select></div>
+        <div><label>Periodo</label>
+          <select id="f-periodo">${[1,2,3,4].map(p=>`<option ${ex?.periodo===p?'selected':''}>${p}</option>`).join('')}</select></div>
+        <div><label>Tiempo (min)</label>
+          <input type="number" id="f-tiempo" value="${ex?.tiempo_minutos||0}" min="0" max="180"></div>
+      </div>
+      <label>Descripcion</label>
+      <input type="text" id="f-desc" value="${esc(ex?.descripcion||'')}">
+      <label>Instrucciones para el estudiante</label>
+      <textarea id="f-instr">${esc(ex?.instrucciones||'')}</textarea>
+      <label>Rubrica general (para el docente / analisis IA)</label>
+      <textarea id="f-rubrica" rows="2">${esc(ex?.rubrica_txt||'')}</textarea>
+    </div>
+    <div class="form-sec">
+      <div class="form-sec-title">Control de acceso</div>
+      <label>Secciones autorizadas (deja vacio = todas)</label>
+      <div class="sec-chips" id="sec-chips">
+        ${SECCIONES.map(s=>`<div class="sec-chip${secs.includes(s)?' active':''}" id="chip_${s}" onclick="toggleChip('${s}')">${s}</div>`).join('')}
+      </div>
+      <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+        <input type="checkbox" id="f-validar" ${ex?.validar_lista?'checked':''} style="width:auto">
+        <label style="margin:0;font-size:14px">Verificar estudiantes contra la lista del curso</label>
+      </div>
+    </div>
+    <div class="form-sec">
+      <div class="form-sec-title">Preguntas</div>
+      <div id="q-list"></div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn btn-outline btn-sm" onclick="addQ('multiple')">+ Opcion multiple</button>
+        <button class="btn btn-outline btn-sm" onclick="addQ('texto')">+ Texto libre</button>
+        <button class="btn btn-outline btn-sm" onclick="addQ('vf')">+ Verdadero/Falso</button>
+        <button class="btn btn-outline btn-sm" onclick="addQ('completar')">+ Completar</button>
+        <button class="btn btn-outline btn-sm" onclick="addQ('ordenar')">+ Ordenar</button>
+        <button class="btn btn-outline btn-sm" onclick="addQ('escala')">+ Escala 1-5</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="S.qBuilders=[];S.view='admin';render()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarExamen()">Guardar examen</button>
+    </div>
+  </div>`;
+  document.getElementById('main-content').innerHTML=html;
+  renderQBuilders();
+}
+
+let _secActivas=[];
+function toggleChip(s){
+  const chip=document.getElementById('chip_'+s);
+  if(chip.classList.contains('active')){chip.classList.remove('active');}
+  else{chip.classList.add('active');}
+}
+function getSecsActivas(){
+  return SECCIONES.filter(s=>{const c=document.getElementById('chip_'+s);return c&&c.classList.contains('active');});
+}
+
+function addQ(tipo){
+  const defaults={
+    multiple:{tipo:'multiple',texto:'',opciones:['','','',''],correcta:'A',puntos:5},
+    texto:{tipo:'texto',texto:'',puntos:10,rubrica:''},
+    vf:{tipo:'vf',texto:'',correcta:'V',puntos:5},
+    completar:{tipo:'completar',texto:'La vida de Jesus es ___ y su mision fue ___',puntos:10},
+    ordenar:{tipo:'ordenar',texto:'Ordena los siguientes elementos:',items:['Elemento 1','Elemento 2','Elemento 3'],puntos:10},
+    escala:{tipo:'escala',texto:'',etiquetas:['Nada','Poco','Regular','Bastante','Mucho'],puntos:5}
+  };
+  S.qBuilders.push({...defaults[tipo]}); renderQBuilders();
+}
+
+function renderQBuilders(){
+  const el=document.getElementById('q-list');
+  if(!el) return;
+  const TN={multiple:'Opcion multiple',texto:'Texto libre',vf:'Verdadero/Falso',completar:'Completar la frase',ordenar:'Ordenar elementos',escala:'Escala 1-5'};
+  el.innerHTML=S.qBuilders.map((q,i)=>{
+    let extra='';
+    if(q.tipo==='multiple'){
+      extra='<div style="margin-top:8px">'+['A','B','C','D'].map((L,oi)=>`
+        <div style="display:flex;gap:6px;margin-bottom:4px;align-items:center">
+          <span style="width:20px;font-weight:700;font-size:13px">${L}</span>
+          <input type="text" value="${esc((q.opciones||[])[oi]||'')}" placeholder="Opcion ${L}" oninput="S.qBuilders[${i}].opciones[${oi}]=this.value" style="flex:1;font-size:13px">
+          <input type="radio" name="cor_${i}" ${q.correcta===L?'checked':''} onchange="S.qBuilders[${i}].correcta='${L}'" title="Correcta">
+        </div>`).join('')+'<small style="color:var(--sub)">El circulo marca la opcion correcta</small></div>';
+    } else if(q.tipo==='vf'){
+      extra=`<div style="margin-top:8px;display:flex;gap:12px;align-items:center">
+        <span style="font-size:12px;color:var(--sub)">Correcta:</span>
+        <label><input type="radio" name="vf_${i}" ${q.correcta==='V'?'checked':''} onchange="S.qBuilders[${i}].correcta='V'"> Verdadero</label>
+        <label><input type="radio" name="vf_${i}" ${q.correcta==='F'?'checked':''} onchange="S.qBuilders[${i}].correcta='F'"> Falso</label>
+      </div>`;
+    } else if(q.tipo==='ordenar'){
+      extra=`<div style="margin-top:6px"><label style="font-size:12px">Items (uno por linea — el orden que escribas es el CORRECTO):</label>
+        <textarea rows="4" style="font-size:13px" oninput="S.qBuilders[${i}].items=this.value.split('\\n').filter(s=>s.trim())">${esc((q.items||[]).join('\n'))}</textarea></div>`;
+    } else if(q.tipo==='completar'){
+      extra=`<small style="color:var(--sub);display:block;margin-top:4px">Usa ___ para los espacios en blanco.</small>`;
+    } else if(q.tipo==='texto'){
+      extra=`<div style="margin-top:6px"><label style="font-size:12px">Criterios de evaluacion (rubrica):</label>
+        <textarea rows="2" style="font-size:13px" placeholder="Excelente: ... Satisfactorio: ..." oninput="S.qBuilders[${i}].rubrica=this.value">${esc(q.rubrica||'')}</textarea></div>`;
+    } else if(q.tipo==='escala'){
+      extra=`<div style="margin-top:6px"><label style="font-size:12px">Etiquetas 1-5 (separadas por coma):</label>
+        <input type="text" style="font-size:13px" value="${esc((q.etiquetas||[]).join(','))}" placeholder="Nada,Poco,Regular,Bastante,Mucho" oninput="S.qBuilders[${i}].etiquetas=this.value.split(',').map(s=>s.trim())"></div>`;
+    }
+    return `<div class="q-builder">
+      <span class="q-type-pill">${TN[q.tipo]}</span>
+      <button class="remove-q" onclick="S.qBuilders.splice(${i},1);renderQBuilders()">Quitar</button>
+      <label style="font-size:12px">Pregunta ${i+1}</label>
+      <textarea rows="2" style="font-size:13px" oninput="S.qBuilders[${i}].texto=this.value">${esc(q.texto||'')}</textarea>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+        <label style="font-size:12px;margin:0;flex-shrink:0">Puntos:</label>
+        <input type="number" value="${q.puntos||5}" min="1" max="100" style="width:65px;font-size:13px" oninput="S.qBuilders[${i}].puntos=parseInt(this.value)||5">
+      </div>${extra}
+    </div>`;
+  }).join('');
+}
+
+async function guardarExamen(){
+  const titulo=document.getElementById('f-titulo').value.trim();
+  if(!titulo){toast('Escribe un titulo');return;}
+  if(S.qBuilders.length===0){toast('Agrega al menos una pregunta');return;}
+  const payload={
+    titulo,
+    grado:document.getElementById('f-grado').value,
+    periodo:parseInt(document.getElementById('f-periodo').value)||1,
+    tiempo_minutos:parseInt(document.getElementById('f-tiempo').value)||0,
+    descripcion:document.getElementById('f-desc').value.trim(),
+    instrucciones:document.getElementById('f-instr').value.trim(),
+    rubrica_txt:document.getElementById('f-rubrica').value.trim(),
+    preguntas:[...S.qBuilders],
+    secciones_activas:getSecsActivas(),
+    validar_lista:document.getElementById('f-validar').checked,
+    updated_at:new Date().toISOString()
+  };
+  let error;
+  if(S.adminExamen){({error}=await sb.from('examenes').update(payload).eq('id',S.adminExamen.id));}
+  else{({error}=await sb.from('examenes').insert({...payload,activo:false}));}
+  if(error){toast('Error: '+error.message,4000);return;}
+  S.qBuilders=[];
+  toast(S.adminExamen?'Examen actualizado':'Examen creado');
+  S.adminExamen=null; S.view='admin'; renderAdmin();
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
