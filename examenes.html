@@ -1363,7 +1363,10 @@ async function procesarImportJSON(){
     activo:false,
     updated_at:new Date().toISOString()
   };
-  const {error}=await sb.from('examenes').insert(payload);
+  const {error}=await rpcAdmin('admin_upsert_examen',{
+    p_id: null,
+    p_datos: payload
+  });
   if(error){toast('Error al importar: '+error.message,4000);return;}
   toast('Examen importado: '+data.titulo);
   document.getElementById('import-json-area').style.display='none';
