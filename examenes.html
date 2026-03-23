@@ -518,6 +518,97 @@ function initDrag(){
   });
 }
 
+
+// ── AUTO-GRADING ENGINE ────────────────────────────────────────
+function normText(s){
+  return String(s||'').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9 ]/g,'').trim();
+}
+
+function calcularNota(examen, respuestas){
+  const qs = examen.preguntas||[];
+  const detalle = [];
+  let puntos_auto = 0;
+  let puntos_texto_max = 0;
+  let puntos_maximo = 0;
+
+  qs.forEach((q, i)=>{
+    const pts = q.puntos||0;
+    puntos_maximo += pts;
+    const resp = respuestas[i];
+    const item = {qi:i, tipo:q.tipo, pts_max:pts, pts:0, auto:false, pendiente:false};
+
+    switch(q.tipo){
+      case 'multiple':{
+        item.auto = true;
+        const L=['A','B','C','D'];
+        const corrIdx = L.indexOf(q.correcta);
+        if(resp===corrIdx) item.pts = pts;
+        break;
+      }
+      case 'vf':{
+        item.auto = true;
+        if(String(resp)===String(q.correcta)) item.pts = pts;
+        break;
+      }
+      case 'ordenar':{
+        item.auto = true;
+        const correctOrder = q.items||[];
+        const studentOrder = Array.isArray(resp) ? resp : [];
+        if(studentOrder.length===0){item.pts=0;break;}
+        // Score by position matches
+        let matches=0;
+        correctOrder.forEach((it,ci)=>{
+          if(normText(studentOrder[ci])===normText(it)) matches++;
+        });
+        // Full marks only if perfect order, partial for partial
+        if(matches===correctOrder.length){
+          item.pts = pts;
+        } else if(matches >= Math.ceil(correctOrder.length/2)){
+          item.pts = Math.round(pts * matches / correctOrder.length);
+        }
+        item.detalle = matches+'/'+correctOrder.length+' en orden correcto';
+        break;
+      }
+      case 'completar':{
+        item.auto = true;
+        const correctBlanks = q.respuestas||[]; // array of correct answers per blank
+        if(correctBlanks.length===0){item.pts=pts;break;} // no key = full marks
+        const studentBlanks = resp&&typeof resp==='object' ? resp : {};
+        let blancoCorrectos=0;
+        correctBlanks.forEach((correct,bi)=>{
+          const given = normText(studentBlanks[bi]||'');
+          const correctNorm = normText(correct);
+          // Accept partial match (at least 60% of correct word)
+          if(given===correctNorm || (given.length>3 && correctNorm.includes(given)) || (correctNorm.length>3 && given.includes(correctNorm.substring(0,Math.ceil(correctNorm.length*0.6))))){
+            blancoCorrectos++;
+          }
+        });
+        item.pts = Math.round(pts * blancoCorrectos / correctBlanks.length);
+        item.detalle = blancoCorrectos+'/'+correctBlanks.length+' blancos correctos';
+        break;
+      }
+      case 'texto':{
+        item.pendiente = true;
+        puntos_texto_max += pts;
+        break;
+      }
+      case 'escala':
+      case 'ordenar_libre':{
+        item.auto = true;
+        item.pts = resp!==undefined&&resp!==null&&resp!=='' ? pts : 0;
+        item.detalle = 'participacion';
+        break;
+      }
+    }
+
+    if(item.auto) puntos_auto += item.pts;
+    detalle.push(item);
+  });
+
+  return {puntos_auto, puntos_texto_max, puntos_maximo, detalle};
+}
 async function submitExamen(auto){
   if(!auto){
     const qs=S.examen.preguntas||[];
@@ -530,9 +621,15 @@ async function submitExamen(auto){
     if(el.id&&el.id.startsWith('txt_')){const qi=parseInt(el.id.split('_')[1]);if(el.value.trim())S.resp[qi]=el.value.trim();}
     if(el.id&&el.id.startsWith('bl_')){const p=el.id.split('_');const qi=parseInt(p[1]),bi=parseInt(p[2]);if(!S.resp[qi])S.resp[qi]={};S.resp[qi][bi]=el.value.trim();}
   });
+  // Auto-grade
+  const {puntos_auto, puntos_texto_max, puntos_maximo, detalle} = calcularNota(S.examen, S.resp);
+  const tiene_texto = puntos_texto_max > 0;
+
   const {error}=await sb.from('respuestas_examenes').insert({
     examen_id:S.examen.id, nombre:S.est.nombre, numero_orden:parseInt(S.est.orden)||0,
-    grado:S.est.grado, seccion:S.est.seccion, respuestas:S.resp, tiempo_usado_seg:tiempoUsado()
+    grado:S.est.grado, seccion:S.est.seccion, respuestas:S.resp, tiempo_usado_seg:tiempoUsado(),
+    puntos_auto, puntos_texto:null, puntos_total:tiene_texto?null:puntos_auto,
+    puntos_maximo, detalle_notas:detalle, texto_revisado:!tiene_texto
   });
   if(error){toast('Error al guardar: '+error.message,4000);return;}
   S.view='enviado'; render();
@@ -863,49 +960,143 @@ function renderAdminResp(){
       <h2 style="margin:0;flex:1">${esc(ex.titulo)}</h2>
       <span class="badge badge-gray">${resps.length} enviadas</span>
     </div>
-    <div class="btn-row" style="margin-bottom:16px">
+    <div class="btn-row" style="margin-bottom:12px">
       <button class="btn btn-success btn-sm" onclick="descargarExcel()">Descargar Excel</button>
       <button class="btn btn-outline btn-sm" onclick="exportarWord()">Exportar Word</button>
       ${resps.length>0?`<button class="btn btn-warn btn-sm" onclick="archivarRespuestas()">Archivar y limpiar</button>`:''}
     </div>
-    ${ex.rubrica_txt?`<div class="info-box" style="margin-bottom:12px"><strong>Rubrica:</strong> ${esc(ex.rubrica_txt)}</div>`:''}
+    ${ex.rubrica_txt?`<div class="info-box" style="margin-bottom:10px"><strong>Rubrica general:</strong> ${esc(ex.rubrica_txt)}</div>`:''}
     <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
     <thead><tr style="background:var(--az);color:#fff">
-      <th style="padding:8px;text-align:left">Nombre</th><th style="padding:8px">Ord</th>
-      <th style="padding:8px">Sec</th><th style="padding:8px">Grado</th>
-      ${qs.map((_,i)=>`<th style="padding:8px">P${i+1}</th>`).join('')}
-      <th style="padding:8px">Tiempo</th><th style="padding:8px">Enviado</th>
+      <th style="padding:8px;text-align:left">Nombre</th>
+      <th style="padding:8px">Ord</th><th style="padding:8px">Sec</th>
+      <th style="padding:8px">Auto</th>
+      <th style="padding:8px">Texto</th>
+      <th style="padding:8px;background:#1B5E20">Total</th>
+      <th style="padding:8px">/ Max</th>
+      <th style="padding:8px">%</th>
+      <th style="padding:8px">Estado</th>
     </tr></thead><tbody>`;
   resps.forEach((r,ri)=>{
-    html+=`<tr style="background:${ri%2?'#F5F5F5':'#fff'}">
-      <td style="padding:7px;font-weight:700">${esc(r.nombre)}</td>
+    const ptAuto = r.puntos_auto??'—';
+    const ptTexto = r.puntos_texto??'—';
+    const ptTotal = r.puntos_total??'—';
+    const ptMax = r.puntos_maximo??'—';
+    const pct = (r.puntos_maximo&&r.puntos_total!=null) ? Math.round(r.puntos_total/r.puntos_maximo*100)+'%' : '—';
+    const pendiente = r.texto_revisado===false && (r.detalle_notas||[]).some(d=>d.pendiente);
+    const estado = r.texto_revisado ? '✓ Revisado' : (pendiente?'⏳ Pendiente':'✓ Auto');
+    const bgRow = ri%2?'#F5F5F5':'#fff';
+    const bgTotal = r.puntos_total!=null ? (r.puntos_total/r.puntos_maximo>=0.7?'#E8F5E9':r.puntos_total/r.puntos_maximo>=0.5?'#FFF8DC':'#FFEBEE') : bgRow;
+    html+=`<tr style="background:${bgRow}">
+      <td style="padding:7px;font-weight:700">
+        ${esc(r.nombre)}
+        ${pendiente?`<button class="btn btn-xs" style="background:#FFF3E0;color:#E65100;border:none;cursor:pointer;border-radius:4px;font-size:11px;margin-left:4px" onclick="revisarTexto('${r.id}')">Revisar</button>`:''}
+      </td>
       <td style="padding:7px;text-align:center">${r.numero_orden}</td>
       <td style="padding:7px;text-align:center">${esc(r.seccion)}</td>
-      <td style="padding:7px;text-align:center">${esc(r.grado)}</td>`;
-    qs.forEach((_,qi)=>{
-      let v=r.respuestas[qi];
-      let d=v===undefined?'—':(typeof v==='object'?JSON.stringify(v):String(v));
-      if(d.length>35) d=d.substring(0,35)+'...';
-      html+=`<td style="padding:7px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(String(v||''))}">${esc(d)}</td>`;
-    });
-    const m=Math.floor((r.tiempo_usado_seg||0)/60),s=(r.tiempo_usado_seg||0)%60;
-    html+=`<td style="padding:7px;text-align:center">${m}:${s<10?'0':''}${s}</td>
-      <td style="padding:7px;font-size:11px;white-space:nowrap">${(r.submitted_at||'').substring(0,16)}</td>
+      <td style="padding:7px;text-align:center;font-weight:700">${ptAuto}</td>
+      <td style="padding:7px;text-align:center;color:${pendiente?'#E65100':'inherit'};font-weight:${pendiente?700:400}">${ptTexto}</td>
+      <td style="padding:7px;text-align:center;font-weight:700;background:${bgTotal}">${ptTotal}</td>
+      <td style="padding:7px;text-align:center;color:#555">${ptMax}</td>
+      <td style="padding:7px;text-align:center;font-weight:700;color:${pct==='—'?'#555':parseInt(pct)>=70?'#1B5E20':parseInt(pct)>=50?'#7B5800':'#B71C1C'}">${pct}</td>
+      <td style="padding:7px;font-size:12px;white-space:nowrap">${estado}</td>
     </tr>`;
   });
   html+=`</tbody></table></div></div>`;
   document.getElementById('main-content').innerHTML=html;
 }
 
+
+// ── REVISAR TEXTO (manual grading) ────────────────────────────
+async function revisarTexto(respId){
+  const resp = S.respuestas.find(r=>r.id===respId);
+  if(!resp) return;
+  const ex = S.adminExamen;
+  const qs = ex.preguntas||[];
+  const pendientes = (resp.detalle_notas||[]).filter(d=>d.pendiente);
+
+  let html = `<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;overflow-y:auto;padding:20px">
+    <div style="max-width:680px;margin:0 auto;background:#fff;border-radius:12px;padding:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h2 style="margin:0;color:#1B3A6B">Revisar respuestas de texto</h2>
+        <button class="btn btn-outline btn-sm" onclick="cerrarRevision()">Cerrar</button>
+      </div>
+      <div style="background:#EEF4FB;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">
+        <strong>${esc(resp.nombre)}</strong> · ${esc(resp.grado)} ${esc(resp.seccion)} · Orden ${resp.numero_orden}<br>
+        Puntos auto: <strong>${resp.puntos_auto??0}</strong> · Puntos texto: <strong style="color:#E65100">pendiente</strong> · Maximo: <strong>${resp.puntos_maximo}</strong>
+      </div>`;
+
+  pendientes.forEach(d=>{
+    const q = qs[d.qi];
+    const respTxt = resp.respuestas[d.qi]||'';
+    html += `<div style="border:1px solid #E0E0E0;border-radius:10px;padding:14px;margin-bottom:12px">
+      <div style="font-size:12px;color:#555;margin-bottom:4px">Pregunta ${d.qi+1} · ${q.puntos} pts</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px">${esc(q.texto)}</div>
+      <div style="background:#F5F5F5;border-radius:8px;padding:10px;font-size:14px;margin-bottom:10px;min-height:60px">${esc(respTxt)||'<em style="color:#aaa">Sin respuesta</em>'}</div>
+      ${q.rubrica?`<div style="background:#FFF8DC;border-radius:6px;padding:8px 10px;font-size:12px;color:#7B5800;margin-bottom:10px"><strong>Rubrica:</strong> ${esc(q.rubrica)}</div>`:''}
+      <div style="display:flex;align-items:center;gap:10px">
+        <label style="font-size:13px;font-weight:700;color:#555;white-space:nowrap">Puntos (max ${q.puntos}):</label>
+        <input type="number" id="pts_${d.qi}" min="0" max="${q.puntos}" value="0" style="width:70px;font-size:15px;font-weight:700">
+        <div style="display:flex;gap:5px">
+          ${[0, Math.round(q.puntos*0.25), Math.round(q.puntos*0.5), Math.round(q.puntos*0.75), q.puntos].map(v=>
+            `<button class="btn btn-xs btn-gray" onclick="document.getElementById('pts_${d.qi}').value=${v}">${v}</button>`
+          ).join('')}
+        </div>
+      </div>
+    </div>`;
+  });
+
+  html += `<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-outline" onclick="cerrarRevision()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarRevision('${respId}',${JSON.stringify(pendientes.map(d=>d.qi))})">Guardar notas</button>
+    </div>
+  </div></div>`;
+
+  const overlay = document.createElement('div');
+  overlay.id='revision-overlay';
+  overlay.innerHTML=html;
+  document.body.appendChild(overlay);
+}
+
+function cerrarRevision(){
+  const el=document.getElementById('revision-overlay');
+  if(el) el.remove();
+}
+
+async function guardarRevision(respId, qIndices){
+  let ptsTxt=0;
+  const resp = S.respuestas.find(r=>r.id===respId);
+  const detalle = [...(resp.detalle_notas||[])];
+  qIndices.forEach(qi=>{
+    const val=parseInt(document.getElementById('pts_'+qi)?.value)||0;
+    ptsTxt+=val;
+    const item=detalle.find(d=>d.qi===qi);
+    if(item){item.pts=val;item.pendiente=false;}
+  });
+  const ptTotal=(resp.puntos_auto||0)+ptsTxt;
+  const {error}=await sb.from('respuestas_examenes').update({
+    puntos_texto:ptsTxt, puntos_total:ptTotal,
+    detalle_notas:detalle, texto_revisado:true
+  }).eq('id',respId);
+  if(error){toast('Error: '+error.message,4000);return;}
+  cerrarRevision();
+  toast('Nota guardada: '+ptTotal+'/'+resp.puntos_maximo+' pts');
+  // Refresh
+  await verRespuestas(S.adminExamen.id);
+}
+
 function descargarExcel(){
   const ex=S.adminExamen; const qs=ex.preguntas||[]; const resps=S.respuestas;
   const wb=XLSX.utils.book_new();
   // Respuestas
-  const h1=['Nombre','Orden','Seccion','Grado','Tiempo(seg)','Enviado'];
-  qs.forEach((q,i)=>h1.push('P'+(i+1)+': '+(q.texto||'').substring(0,40)));
+  const h1=['Nombre','Orden','Seccion','Grado','Pts Auto','Pts Texto','Pts Total','Maximo','%','Revisado','Tiempo(seg)','Enviado'];
+  qs.forEach((q,i)=>h1.push('P'+(i+1)+' ['+q.tipo+']('+q.puntos+'pts): '+(q.texto||'').substring(0,35)));
   const rows=[h1];
   resps.forEach(r=>{
-    const row=[r.nombre,r.numero_orden,r.seccion,r.grado,r.tiempo_usado_seg||0,(r.submitted_at||'').substring(0,16)];
+    const pct=(r.puntos_maximo&&r.puntos_total!=null)?Math.round(r.puntos_total/r.puntos_maximo*100)+'%':'—';
+    const row=[r.nombre,r.numero_orden,r.seccion,r.grado,
+      r.puntos_auto??'—',r.puntos_texto??'—',r.puntos_total??'—',r.puntos_maximo??'—',pct,
+      r.texto_revisado?'Si':'Pendiente',r.tiempo_usado_seg||0,(r.submitted_at||'').substring(0,16)];
     qs.forEach((_,qi)=>{ const v=r.respuestas[qi]; row.push(v===undefined?'':(typeof v==='object'?JSON.stringify(v):String(v))); });
     rows.push(row);
   });
@@ -1049,7 +1240,11 @@ function renderQBuilders(){
       extra=`<div style="margin-top:6px"><label style="font-size:12px">Items (uno por linea — el orden que escribas es el CORRECTO):</label>
         <textarea rows="4" style="font-size:13px" oninput="S.qBuilders[${i}].items=this.value.split('\\n').filter(s=>s.trim())">${esc((q.items||[]).join('\n'))}</textarea></div>`;
     } else if(q.tipo==='completar'){
-      extra=`<small style="color:var(--sub);display:block;margin-top:4px">Usa ___ para los espacios en blanco.</small>`;
+      const respArr=(q.respuestas||[]).join('\n');
+      extra=`<small style="color:var(--sub);display:block;margin-top:4px">Usa ___ para los espacios en blanco.</small>
+        <div style="margin-top:6px"><label style="font-size:12px;color:#1B5E20;font-weight:700">Respuestas correctas (una por linea, en orden):</label>
+        <textarea rows="3" style="font-size:12px;color:#1B5E20;border-color:#A5D6A7" placeholder="autonomia&#10;beneficencia&#10;no maleficencia" oninput="S.qBuilders[${i}].respuestas=this.value.split('\\n').filter(s=>s.trim())">${esc(respArr)}</textarea>
+        <small style="color:#1B5E20">Deja vacio si no hay respuesta exacta. Acepta variaciones de tildes.</small></div>`;
     } else if(q.tipo==='texto'){
       extra=`<div style="margin-top:6px"><label style="font-size:12px">Criterios de evaluacion (rubrica):</label>
         <textarea rows="2" style="font-size:13px" placeholder="Excelente: ... Satisfactorio: ..." oninput="S.qBuilders[${i}].rubrica=this.value">${esc(q.rubrica||'')}</textarea></div>`;
