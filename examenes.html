@@ -625,12 +625,22 @@ async function submitExamen(auto){
   const {puntos_auto, puntos_texto_max, puntos_maximo, detalle} = calcularNota(S.examen, S.resp);
   const tiene_texto = puntos_texto_max > 0;
 
-  const {error}=await sb.from('respuestas_examenes').insert({
-    examen_id:S.examen.id, nombre:S.est.nombre, numero_orden:parseInt(S.est.orden)||0,
-    grado:S.est.grado, seccion:S.est.seccion, respuestas:S.resp, tiempo_usado_seg:tiempoUsado(),
-    puntos_auto, puntos_texto:null, puntos_total:tiene_texto?null:puntos_auto,
-    puntos_maximo, detalle_notas:detalle, texto_revisado:!tiene_texto
+  const {data:rpcData, error}=await sb.rpc('public_enviar_respuesta',{
+    p_examen_id:     S.examen.id,
+    p_nombre:        S.est.nombre,
+    p_numero_orden:  parseInt(S.est.orden)||0,
+    p_grado:         S.est.grado,
+    p_seccion:       S.est.seccion,
+    p_respuestas:    S.resp,
+    p_tiempo_seg:    tiempoUsado(),
+    p_puntos_auto:   puntos_auto,
+    p_puntos_maximo: puntos_maximo,
+    p_detalle_notas: detalle,
+    p_tiene_texto:   tiene_texto
   });
+  if(!error && rpcData?.error){ 
+    toast('No se pudo enviar: '+rpcData.error, 4000); return;
+  }
   if(error){toast('Error al guardar: '+error.message,4000);return;}
   S.view='enviado'; render();
 }
