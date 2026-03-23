@@ -1047,6 +1047,7 @@ async function revisarTexto(respId){
   });
 
   html += `<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <div id="revision-error" style="display:none;background:#FFEBEE;color:#B71C1C;border-radius:8px;padding:8px 12px;font-size:13px;flex:1"></div>
       <button class="btn btn-outline" onclick="cerrarRevision()">Cancelar</button>
       <button class="btn btn-primary" onclick="guardarRevision('${respId}',${JSON.stringify(pendientes.map(d=>d.qi))})">Guardar notas</button>
     </div>
@@ -1064,24 +1065,53 @@ function cerrarRevision(){
 }
 
 async function guardarRevision(respId, qIndices){
+  // Button feedback
+  const btn = document.querySelector('#revision-overlay .btn-primary');
+  if(btn){ btn.disabled=true; btn.textContent='Guardando...'; }
+
   let ptsTxt=0;
   const resp = S.respuestas.find(r=>r.id===respId);
-  const detalle = [...(resp.detalle_notas||[])];
+  if(!resp){ toast('Error: respuesta no encontrada',4000); return; }
+
+  const detalle = JSON.parse(JSON.stringify(resp.detalle_notas||[]));
   qIndices.forEach(qi=>{
-    const val=parseInt(document.getElementById('pts_'+qi)?.value)||0;
-    ptsTxt+=val;
-    const item=detalle.find(d=>d.qi===qi);
-    if(item){item.pts=val;item.pendiente=false;}
+    const input = document.getElementById('pts_'+qi);
+    const val = input ? (parseInt(input.value)||0) : 0;
+    ptsTxt += val;
+    const item = detalle.find(d=>d.qi===qi);
+    if(item){ item.pts=val; item.pendiente=false; }
+    else { detalle.push({qi, pts:val, pendiente:false, auto:false}); }
   });
-  const ptTotal=(resp.puntos_auto||0)+ptsTxt;
-  const {error}=await sb.from('respuestas_examenes').update({
-    puntos_texto:ptsTxt, puntos_total:ptTotal,
-    detalle_notas:detalle, texto_revisado:true
-  }).eq('id',respId);
-  if(error){toast('Error: '+error.message,4000);return;}
+
+  const ptTotal = (resp.puntos_auto||0) + ptsTxt;
+
+  const {data, error} = await sb.from('respuestas_examenes').update({
+    puntos_texto: ptsTxt,
+    puntos_total: ptTotal,
+    detalle_notas: detalle,
+    texto_revisado: true
+  }).eq('id', respId).select();
+
+  if(error){
+    console.error('Supabase update error:', error);
+    if(btn){ btn.disabled=false; btn.textContent='Guardar notas'; }
+    // Show detailed error in overlay
+    const errDiv = document.getElementById('revision-error');
+    if(errDiv){ errDiv.style.display='block'; errDiv.textContent='Error al guardar: '+error.message+' (codigo: '+error.code+')'; }
+    toast('Error al guardar — ver detalle en el panel',5000);
+    return;
+  }
+
+  if(!data || data.length===0){
+    if(btn){ btn.disabled=false; btn.textContent='Guardar notas'; }
+    const errDiv = document.getElementById('revision-error');
+    if(errDiv){ errDiv.style.display='block'; errDiv.textContent='No se actualizó ningún registro. Verifica la política UPDATE en Supabase (ejecuta fix_rls_update.sql).'; }
+    toast('Sin efecto — falta política UPDATE en Supabase',5000);
+    return;
+  }
+
   cerrarRevision();
   toast('Nota guardada: '+ptTotal+'/'+resp.puntos_maximo+' pts');
-  // Refresh
   await verRespuestas(S.adminExamen.id);
 }
 
