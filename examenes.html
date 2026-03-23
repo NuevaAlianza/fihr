@@ -279,22 +279,22 @@ function renderRegistro(){
     ${ex.descripcion?`<div style="color:var(--sub);font-size:14px;margin-bottom:12px">${esc(ex.descripcion)}</div>`:''}
     ${ex.instrucciones?`<div class="info-box"><strong>Instrucciones:</strong> ${esc(ex.instrucciones)}</div>`:''}
     ${ex.validar_lista?'<div class="warn-box">Tu nombre y numero seran verificados contra la lista del curso. Escribe exactamente como aparece en tu lista.</div>':''}
-    <label>Nombre completo *</label>
+    <label for="r-nombre">Nombre completo *</label>
     <div class="secure-area">
       <input type="text" id="r-nombre" maxlength="80" placeholder="Escribe tu nombre completo" autocomplete="off">
       <span class="secure-icon">sin pegar</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div>
-        <label>Numero de orden *</label>
+        <label for="r-orden">Numero de orden *</label>
         <input type="number" id="r-orden" min="1" max="50" placeholder="Ej: 12">
       </div>
       <div>
-        <label>Seccion *</label>
+        <label for="r-seccion">Seccion *</label>
         <select id="r-seccion"><option value="">-- Selecciona --</option>${secOptions}</select>
       </div>
     </div>
-    <label>Grado *</label>
+    <label for="r-grado">Grado *</label>
     <select id="r-grado">
       <option value="">-- Selecciona --</option>
       <option value="2do">2do Grado</option>
@@ -659,7 +659,7 @@ function renderAdminLogin(){
   document.getElementById('main-content').innerHTML=`
   <div class="card" style="max-width:360px;margin:40px auto">
     <h2>Acceso administrador</h2>
-    <label>PIN</label>
+    <label for="pin-in">PIN</label>
     <input type="password" id="pin-in" maxlength="10" placeholder="Ingresa el PIN" onkeydown="if(event.key==='Enter')checkPin()">
     <div class="btn-row">
       <button class="btn btn-outline" onclick="S.view='inicio';render()">Cancelar</button>
@@ -673,6 +673,7 @@ async function checkPin(){
   const {data}=await sb.from('admin_config').select('pin_hash').single();
   if(data&&data.pin_hash===hash){
     S.adminAuth=true;
+    S.pinHash=hash; // Store for RPC calls
     document.getElementById('btn-admin').textContent='Salir';
     document.getElementById('btn-admin').onclick=adminLogout;
     S.view='admin'; render();
@@ -749,13 +750,15 @@ async function buildExamenesTab(){
 }
 
 async function toggleActivo(id,actual){
-  await sb.from('examenes').update({activo:!actual,updated_at:new Date().toISOString()}).eq('id',id);
+  const {error} = await rpcAdmin('admin_toggle_examen',{p_id:id, p_activo:!actual});
+  if(error){toast('Error: '+error.message,4000);return;}
   toast(actual?'Examen cerrado':'Examen abierto');
   S.adminTab='examenes'; renderAdmin();
 }
 async function eliminarExamen(id,titulo){
   if(!confirm('Eliminar "'+titulo+'" y TODAS sus respuestas? Esta accion no se puede deshacer.')) return;
-  await sb.from('examenes').delete().eq('id',id);
+  const {error} = await rpcAdmin('admin_delete_examen',{p_id:id});
+  if(error){toast('Error: '+error.message,4000);return;}
   toast('Eliminado'); renderAdmin();
 }
 async function editarExamen(id){
@@ -794,7 +797,7 @@ async function buildListaTab(){
         <div><label>Seccion</label><select id="ae-sec">${secs.map(s=>`<option>${s}</option>`).join('')}</select></div>
         <div><label>Numero</label><input type="number" id="ae-num" min="1" max="50"></div>
       </div>
-      <label>Nombre completo</label>
+      <label for="ae-nombre">Nombre completo</label>
       <input type="text" id="ae-nombre" placeholder="Nombre Apellido Apellido" maxlength="80">
       <div class="btn-row">
         <button class="btn btn-outline btn-sm" onclick="document.getElementById('add-est-area').style.display='none'">Cancelar</button>
@@ -856,7 +859,7 @@ async function procesarCSV(){
     rows.push({grado,seccion:seccion.toUpperCase(),numero_orden:numero,nombre,activo:true});
   });
   if(errores.length>0){toast(errores.length+' errores: '+errores[0],4000);return;}
-  const {error}=await sb.from('estudiantes_lista').upsert(rows,{onConflict:'grado,seccion,numero_orden',ignoreDuplicates:false});
+  const {error}=await rpcAdmin('admin_upsert_estudiantes',{p_filas:rows});
   if(error){toast('Error: '+error.message,4000);return;}
   toast(rows.length+' estudiantes importados');
   document.getElementById('import-area').style.display='none';
@@ -868,7 +871,7 @@ async function guardarEstudiante(){
   const orden=parseInt(document.getElementById('ae-num').value)||0;
   const nombre=document.getElementById('ae-nombre').value.trim();
   if(!nombre||orden<1){toast('Completa todos los campos');return;}
-  const {error}=await sb.from('estudiantes_lista').upsert({grado,seccion,numero_orden:orden,nombre,activo:true},{onConflict:'grado,seccion,numero_orden'});
+  const {error}=await rpcAdmin('admin_upsert_estudiantes',{p_filas:[{grado,seccion,numero_orden:orden,nombre}]});
   if(error){toast('Error: '+error.message);return;}
   toast('Estudiante guardado');
   document.getElementById('add-est-area').style.display='none';
@@ -876,12 +879,12 @@ async function guardarEstudiante(){
 }
 async function borrarEstudiante(id){
   if(!confirm('Eliminar este estudiante de la lista?')) return;
-  await sb.from('estudiantes_lista').delete().eq('id',id);
+  await rpcAdmin('admin_delete_estudiante',{p_id:id});
   S.adminTab='lista'; renderAdmin();
 }
 async function borrarSeccion(grado,seccion){
   if(!confirm('Borrar todos los estudiantes de '+grado+' seccion '+seccion+'?')) return;
-  await sb.from('estudiantes_lista').delete().eq('grado',grado).eq('seccion',seccion);
+  await rpcAdmin('admin_delete_seccion',{p_grado:grado,p_seccion:seccion});
   toast('Seccion borrada'); S.adminTab='lista'; renderAdmin();
 }
 
@@ -938,7 +941,8 @@ function descargarHistorial(){
 async function borrarHistorial(){
   if(!confirm('Borrar PERMANENTEMENTE todo el historial archivado? Esta accion no se puede deshacer.')) return;
   if(!confirm('Confirma: borrar TODO el historial?')) return;
-  await sb.from('respuestas_archivadas').delete().neq('id','00000000-0000-0000-0000-000000000000');
+  const {error:errH} = await rpcAdmin('admin_borrar_historial',{});
+  if(errH){toast('Error: '+errH.message,4000);return;}
   toast('Historial borrado'); S.adminTab='historial'; renderAdmin();
 }
 
@@ -1085,28 +1089,19 @@ async function guardarRevision(respId, qIndices){
 
   const ptTotal = (resp.puntos_auto||0) + ptsTxt;
 
-  const {data, error} = await sb.from('respuestas_examenes').update({
-    puntos_texto: ptsTxt,
-    puntos_total: ptTotal,
-    detalle_notas: detalle,
-    texto_revisado: true
-  }).eq('id', respId).select();
+  const {error} = await rpcAdmin('admin_guardar_nota',{
+    p_resp_id:   respId,
+    p_pts_texto: ptsTxt,
+    p_pts_total: ptTotal,
+    p_detalle:   detalle
+  });
 
   if(error){
-    console.error('Supabase update error:', error);
-    if(btn){ btn.disabled=false; btn.textContent='Guardar notas'; }
-    // Show detailed error in overlay
-    const errDiv = document.getElementById('revision-error');
-    if(errDiv){ errDiv.style.display='block'; errDiv.textContent='Error al guardar: '+error.message+' (codigo: '+error.code+')'; }
-    toast('Error al guardar — ver detalle en el panel',5000);
-    return;
-  }
-
-  if(!data || data.length===0){
+    console.error('RPC error:', error);
     if(btn){ btn.disabled=false; btn.textContent='Guardar notas'; }
     const errDiv = document.getElementById('revision-error');
-    if(errDiv){ errDiv.style.display='block'; errDiv.textContent='No se actualizó ningún registro. Verifica la política UPDATE en Supabase (ejecuta fix_rls_update.sql).'; }
-    toast('Sin efecto — falta política UPDATE en Supabase',5000);
+    if(errDiv){ errDiv.style.display='block'; errDiv.textContent='Error: '+error.message; }
+    toast('Error al guardar',4000);
     return;
   }
 
@@ -1155,11 +1150,12 @@ async function archivarRespuestas(){
     nombre:r.nombre, numero_orden:r.numero_orden, grado:r.grado, seccion:r.seccion,
     respuestas:r.respuestas, tiempo_usado_seg:r.tiempo_usado_seg, submitted_at:r.submitted_at
   }));
-  const {error:e1}=await sb.from('respuestas_archivadas').insert(archivos);
-  if(e1){toast('Error al archivar: '+e1.message,4000);return;}
-  // Delete from active
   const ids=S.respuestas.map(r=>r.id);
-  await sb.from('respuestas_examenes').delete().in('id',ids);
+  const {error:e1} = await rpcAdmin('admin_archivar_respuestas',{
+    p_examen_id: ex.id,
+    p_resp_ids:  ids
+  });
+  if(e1){toast('Error al archivar: '+e1.message,4000);return;}
   toast(archivos.length+' respuestas archivadas');
   S.view='admin'; S.adminTab='examenes'; renderAdmin();
 }
@@ -1176,7 +1172,7 @@ function renderAdminCrear(){
     </div>
     <div class="form-sec">
       <div class="form-sec-title">Informacion general</div>
-      <label>Titulo del examen</label>
+      <label for="f-titulo">Titulo del examen</label>
       <input type="text" id="f-titulo" value="${esc(ex?.titulo||'')}" placeholder="Ej: Examen P3 — Codigo Etico Tecnologico">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
         <div><label>Grado</label>
@@ -1186,11 +1182,11 @@ function renderAdminCrear(){
         <div><label>Tiempo (min)</label>
           <input type="number" id="f-tiempo" value="${ex?.tiempo_minutos||0}" min="0" max="180"></div>
       </div>
-      <label>Descripcion</label>
+      <label for="f-desc">Descripcion</label>
       <input type="text" id="f-desc" value="${esc(ex?.descripcion||'')}">
-      <label>Instrucciones para el estudiante</label>
+      <label for="f-instr">Instrucciones para el estudiante</label>
       <textarea id="f-instr">${esc(ex?.instrucciones||'')}</textarea>
-      <label>Rubrica general (para el docente / analisis IA)</label>
+      <label for="f-rubrica">Rubrica general (para el docente / analisis IA)</label>
       <textarea id="f-rubrica" rows="2">${esc(ex?.rubrica_txt||'')}</textarea>
     </div>
     <div class="form-sec">
@@ -1312,9 +1308,10 @@ async function guardarExamen(){
     validar_lista:document.getElementById('f-validar').checked,
     updated_at:new Date().toISOString()
   };
-  let error;
-  if(S.adminExamen){({error}=await sb.from('examenes').update(payload).eq('id',S.adminExamen.id));}
-  else{({error}=await sb.from('examenes').insert({...payload,activo:false}));}
+  const {error} = await rpcAdmin('admin_upsert_examen',{
+    p_id: S.adminExamen ? S.adminExamen.id : null,
+    p_datos: payload
+  });
   if(error){toast('Error: '+error.message,4000);return;}
   S.qBuilders=[];
   toast(S.adminExamen?'Examen actualizado':'Examen creado');
@@ -1322,6 +1319,14 @@ async function guardarExamen(){
 }
 
 
+
+// ── RPC ADMIN HELPER ──────────────────────────────────────────
+async function rpcAdmin(fn, params){
+  const {data, error} = await sb.rpc(fn, {p_pin_hash: S.pinHash, ...params});
+  if(error) return {error};
+  if(data && data.error) return {error: {message: data.error}};
+  return {data};
+}
 // ── IMPORT JSON ────────────────────────────────────────────────
 function mostrarImportJSON(){
   const a=document.getElementById('import-json-area');
