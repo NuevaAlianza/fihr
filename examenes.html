@@ -45,7 +45,36 @@ textarea{resize:vertical;min-height:80px}
 .badge-off{background:var(--ro2);color:var(--ro)}
 .badge-gray{background:#ECEFF1;color:#37474F}
 .badge-am{background:var(--am2);color:var(--am)}
-/* Questions */
+
+/* ── SELECTOR DE GRADO ─────────────────────────────────────── */
+.selector-wrap{padding:8px 0}
+.selector-titulo{text-align:center;font-size:13px;color:rgba(255,255,255,.75);
+  margin-bottom:16px;letter-spacing:.05em;text-transform:uppercase;font-weight:700}
+.grado-btn{
+  display:flex;align-items:center;width:100%;border:none;border-radius:14px;
+  cursor:pointer;overflow:hidden;margin-bottom:10px;min-height:88px;
+  position:relative;transition:transform .15s,box-shadow .15s;
+  box-shadow:0 3px 10px rgba(0,0,0,.18)}
+.grado-btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.grado-btn:active{transform:translateY(0);box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.grado-btn-left{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:14px 18px 14px 22px;min-width:120px;z-index:1}
+.grado-num{font-size:38px;font-weight:700;color:#fff;line-height:1;
+  text-shadow:0 2px 6px rgba(0,0,0,.25)}
+.grado-nombre{font-size:11px;color:rgba(255,255,255,.8);font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+.grado-etapa{font-size:10px;color:rgba(255,255,255,.6);margin-top:1px;font-style:italic}
+.grado-btn-right{flex:1;display:flex;align-items:center;justify-content:flex-end;
+  padding-right:16px;opacity:.9}
+.grado-btn-right svg{width:90px;height:80px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.2))}
+.grado-unavail{opacity:.55;cursor:default}
+.grado-unavail:hover{transform:none;box-shadow:0 3px 10px rgba(0,0,0,.18)}
+.grado-tag{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.25);
+  color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;
+  letter-spacing:.04em}
+
+/* ── PREGUNTAS ────────────────────────────────────────────── */
 .pregunta-card{background:#fff;border:1.5px solid var(--brd);border-radius:10px;padding:18px;margin-bottom:12px}
 .pregunta-num{display:inline-flex;align-items:center;justify-content:center;background:var(--az);color:#fff;border-radius:50%;width:26px;height:26px;font-size:13px;font-weight:700;margin-right:8px;flex-shrink:0}
 .pregunta-header{display:flex;align-items:flex-start;margin-bottom:12px}
@@ -77,11 +106,10 @@ textarea{resize:vertical;min-height:80px}
 .escala-btn.selected{border-color:var(--az);background:var(--az);color:#fff}
 .escala-num{font-size:18px;font-weight:700}
 .escala-lbl{font-size:11px;margin-top:2px}
-.progress-bar{height:6px;background:#e0e0e0;border-radius:3px;margin-bottom:18px}
-.progress-fill{height:100%;background:var(--az);border-radius:3px;transition:width .3s}
 .secure-area{position:relative}
 .secure-icon{position:absolute;top:8px;right:10px;font-size:11px;color:#aaa;background:#f5f5f5;border-radius:4px;padding:2px 6px;pointer-events:none}
 .secure-area textarea{padding-right:76px}
+
 /* Admin */
 .exam-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--brd);flex-wrap:wrap}
 .exam-row:last-child{border-bottom:none}
@@ -100,22 +128,17 @@ textarea{resize:vertical;min-height:80px}
 .q-builder{border:1px solid #C5D5E8;border-radius:8px;padding:12px;margin-bottom:8px;background:#FAFBFF}
 .q-type-pill{display:inline-block;background:var(--az2);color:var(--az);font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-bottom:6px}
 .remove-q{float:right;background:var(--ro2);color:var(--ro);border:none;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer;font-weight:700}
-/* Lista estudiantes */
 .est-table{width:100%;border-collapse:collapse;font-size:13px}
 .est-table th{background:var(--az);color:#fff;padding:7px 10px;text-align:left;font-size:12px}
 .est-table td{padding:7px 10px;border-bottom:1px solid var(--brd)}
 .est-table tr:hover td{background:var(--az2)}
-/* Tabs admin */
 .admin-tabs{display:flex;gap:0;border-bottom:2px solid var(--az2);margin-bottom:18px}
 .admin-tab{padding:8px 16px;cursor:pointer;font-size:14px;font-weight:700;color:var(--sub);border-bottom:3px solid transparent;margin-bottom:-2px}
 .admin-tab.active{color:var(--az);border-bottom-color:var(--az)}
-/* Archive indicator */
 .archived-row{background:#FFFDE7}
-/* Enviado */
 .enviado-box{text-align:center;padding:36px 16px}
 .enviado-icon{font-size:52px;margin-bottom:12px}
 .enviado-title{font-size:22px;font-weight:700;color:var(--ve);margin-bottom:8px}
-/* toast */
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);
   background:var(--az);color:#fff;padding:10px 22px;border-radius:20px;font-size:14px;
   font-weight:700;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
@@ -123,13 +146,12 @@ textarea{resize:vertical;min-height:80px}
 #copy-toast{display:none;position:fixed;bottom:72px;left:50%;transform:translateX(-50%);
   background:var(--warn);color:#fff;padding:10px 20px;border-radius:20px;font-size:14px;
   font-weight:700;z-index:9999;pointer-events:none}
-/* info box */
 .info-box{background:var(--az2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--az);margin-bottom:12px}
 .warn-box{background:var(--warn2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--warn)}
 .success-box{background:var(--ve2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--ve)}
 @media(max-width:600px){
   .op-btn{font-size:13px}.vf-row{flex-direction:column}.escala-btn{min-width:38px}
-  nav{gap:6px}
+  nav{gap:6px}.grado-num{font-size:30px}.grado-btn-right svg{width:72px;height:64px}
 }
 </style>
 </head>
@@ -150,11 +172,11 @@ textarea{resize:vertical;min-height:80px}
 const SUPABASE_URL = 'https://uazurfbmrnsadkrxutpo.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhenVyZmJtcm5zYWRrcnh1dHBvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NTY0NzEsImV4cCI6MjA2NzIzMjQ3MX0.GmBk4XRX0gVhw20gTGX8jM58mb2gXOFC7qkY8iMEU9k';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
 const SECCIONES = ['A','B','C','D','E'];
 
 const S = {
-  view:'inicio', examenes:[], examen:null,
+  view:'selector', examenes:[], examen:null,
+  gradoSeleccionado: null,
   est:{nombre:'',orden:0,grado:'',seccion:''},
   resp:{}, ordenItems:{},
   timerSec:0, timerStart:0, timerInterval:null,
@@ -163,15 +185,170 @@ const S = {
   qBuilders:[]
 };
 
+// ── GRADOS CONFIG ──────────────────────────────────────────────
+const GRADOS_CONFIG = [
+  {
+    nivel:'1ro', nombre:'Primer Grado', etapa:'La semilla',
+    g1:'#6D4C41', g2:'#3E2723', disponible:false,
+    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+      <!-- tierra -->
+      <ellipse cx="45" cy="68" rx="35" ry="8" fill="rgba(0,0,0,.2)"/>
+      <rect x="10" y="60" width="70" height="14" rx="7" fill="#4E342E" opacity=".6"/>
+      <!-- semilla principal -->
+      <ellipse cx="45" cy="52" rx="16" ry="11" fill="#D7CCC8" transform="rotate(-15,45,52)"/>
+      <ellipse cx="45" cy="52" rx="10" ry="7" fill="#BCAAA4" transform="rotate(-15,45,52)"/>
+      <!-- raíces -->
+      <path d="M45 62 Q42 72 36 74" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M45 62 Q48 72 54 74" stroke="#8D6E63" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M45 66 Q45 73 45 76" stroke="#8D6E63" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <!-- semillas pequeñas -->
+      <ellipse cx="22" cy="58" rx="7" ry="5" fill="#D7CCC8" opacity=".7" transform="rotate(-20,22,58)"/>
+      <ellipse cx="68" cy="57" rx="6" ry="4" fill="#D7CCC8" opacity=".5" transform="rotate(10,68,57)"/>
+      <!-- brillo -->
+      <ellipse cx="40" cy="48" rx="5" ry="3" fill="rgba(255,255,255,.25)" transform="rotate(-15,40,48)"/>
+    </svg>`
+  },
+  {
+    nivel:'2do', nombre:'Segundo Grado', etapa:'Los primeros brotes',
+    g1:'#66BB6A', g2:'#1B5E20', disponible:true,
+    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+      <!-- tierra -->
+      <ellipse cx="45" cy="72" rx="30" ry="6" fill="rgba(0,0,0,.2)"/>
+      <rect x="15" y="66" width="60" height="10" rx="5" fill="#4E342E" opacity=".5"/>
+      <!-- tallo -->
+      <path d="M45 66 Q44 50 45 30" stroke="#A5D6A7" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <!-- hoja izquierda -->
+      <path d="M45 50 Q28 42 22 30 Q36 30 45 44 Z" fill="#81C784"/>
+      <path d="M45 50 Q36 44 33 36" stroke="#4CAF50" stroke-width="1" fill="none"/>
+      <!-- hoja derecha -->
+      <path d="M45 42 Q62 34 68 22 Q54 24 45 38 Z" fill="#A5D6A7"/>
+      <path d="M45 42 Q54 38 57 30" stroke="#66BB6A" stroke-width="1" fill="none"/>
+      <!-- hojita punta -->
+      <path d="M45 30 Q42 20 45 12 Q48 20 45 30 Z" fill="#C8E6C9"/>
+      <!-- gotitas de rocío -->
+      <circle cx="28" cy="36" r="2.5" fill="rgba(255,255,255,.6)"/>
+      <circle cx="60" cy="26" r="2" fill="rgba(255,255,255,.5)"/>
+    </svg>`
+  },
+  {
+    nivel:'3ro', nombre:'Tercer Grado', etapa:'Creciendo hacia el sol',
+    g1:'#26A69A', g2:'#004D40', disponible:false,
+    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+      <!-- tierra -->
+      <ellipse cx="45" cy="74" rx="28" ry="5" fill="rgba(0,0,0,.2)"/>
+      <rect x="17" y="69" width="56" height="9" rx="4" fill="#4E342E" opacity=".5"/>
+      <!-- tallo grueso -->
+      <path d="M45 69 Q43 52 45 20" stroke="#80CBC4" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <!-- hojas inferiores -->
+      <path d="M45 60 Q26 55 18 44 Q32 44 45 56 Z" fill="#4DB6AC"/>
+      <path d="M45 60 Q64 55 72 44 Q58 44 45 56 Z" fill="#80CBC4"/>
+      <!-- hojas medias -->
+      <path d="M45 44 Q28 36 22 24 Q36 26 45 40 Z" fill="#26A69A"/>
+      <path d="M45 44 Q62 36 68 24 Q54 26 45 40 Z" fill="#4DB6AC"/>
+      <!-- hojitas cima -->
+      <path d="M45 28 Q40 18 42 10 Q46 16 45 28 Z" fill="#B2DFDB"/>
+      <path d="M45 26 Q50 16 48 8 Q44 14 45 26 Z" fill="#B2DFDB"/>
+      <!-- sol detrás -->
+      <circle cx="72" cy="14" r="8" fill="rgba(255,235,59,.4)"/>
+      <circle cx="72" cy="14" r="5" fill="rgba(255,235,59,.6)"/>
+    </svg>`
+  },
+  {
+    nivel:'4to', nombre:'Cuarto Grado', etapa:'El árbol joven',
+    g1:'#42A5F5', g2:'#0D47A1', disponible:true,
+    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+      <!-- cielo / nubes -->
+      <ellipse cx="70" cy="14" rx="14" ry="7" fill="rgba(255,255,255,.25)"/>
+      <ellipse cx="78" cy="12" rx="10" ry="6" fill="rgba(255,255,255,.2)"/>
+      <!-- tierra -->
+      <ellipse cx="45" cy="75" rx="30" ry="5" fill="rgba(0,0,0,.2)"/>
+      <rect x="15" y="70" width="60" height="8" rx="4" fill="#5D4037" opacity=".5"/>
+      <!-- tronco -->
+      <path d="M40 70 Q39 55 40 40" stroke="#8D6E63" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M50 70 Q51 55 50 40" stroke="#795548" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <!-- copa inferior -->
+      <ellipse cx="45" cy="46" rx="26" ry="14" fill="#388E3C" opacity=".8"/>
+      <!-- copa media -->
+      <ellipse cx="45" cy="36" rx="22" ry="13" fill="#43A047"/>
+      <!-- copa superior -->
+      <ellipse cx="45" cy="25" rx="16" ry="11" fill="#66BB6A"/>
+      <!-- lucecitas -->
+      <circle cx="32" cy="40" r="3" fill="#A5D6A7" opacity=".7"/>
+      <circle cx="58" cy="38" r="2.5" fill="#C8E6C9" opacity=".7"/>
+      <circle cx="45" cy="20" r="3" fill="#E8F5E9" opacity=".8"/>
+    </svg>`
+  },
+  {
+    nivel:'5to', nombre:'Quinto Grado', etapa:'El árbol maduro',
+    g1:'#8BC34A', g2:'#33691E', disponible:true,
+    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+      <!-- tierra -->
+      <ellipse cx="45" cy="76" rx="32" ry="5" fill="rgba(0,0,0,.2)"/>
+      <rect x="13" y="71" width="64" height="8" rx="4" fill="#4E342E" opacity=".6"/>
+      <!-- raíces visibles -->
+      <path d="M40 71 Q34 74 28 73" stroke="#6D4C41" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M50 71 Q56 74 62 73" stroke="#6D4C41" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- tronco grueso -->
+      <path d="M38 71 Q36 52 38 35" stroke="#795548" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <path d="M52 71 Q54 52 52 35" stroke="#6D4C41" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <!-- ramas -->
+      <path d="M44 42 Q30 36 22 28" stroke="#795548" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M46 38 Q60 32 68 24" stroke="#795548" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- copa densa -->
+      <ellipse cx="45" cy="48" rx="30" ry="14" fill="#2E7D32" opacity=".7"/>
+      <ellipse cx="30" cy="36" rx="16" ry="12" fill="#388E3C"/>
+      <ellipse cx="60" cy="32" rx="16" ry="12" fill="#43A047"/>
+      <ellipse cx="45" cy="26" rx="20" ry="13" fill="#558B2F"/>
+      <ellipse cx="45" cy="18" rx="14" ry="9" fill="#7CB342"/>
+      <!-- destellos -->
+      <circle cx="26" cy="38" r="3.5" fill="#A5D6A7" opacity=".6"/>
+      <circle cx="64" cy="28" r="3" fill="#C5E1A5" opacity=".6"/>
+      <circle cx="45" cy="14" r="3.5" fill="#DCEDC8" opacity=".7"/>
+    </svg>`
+  },
+  {
+    nivel:'6to', nombre:'Sexto Grado', etapa:'Los frutos del año',
+    g1:'#FF8F00', g2:'#BF360C', disponible:true,
+    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+      <!-- tierra -->
+      <ellipse cx="45" cy="77" rx="32" ry="5" fill="rgba(0,0,0,.2)"/>
+      <rect x="13" y="72" width="64" height="8" rx="4" fill="#4E342E" opacity=".6"/>
+      <!-- raíces -->
+      <path d="M40 72 Q33 76 26 74" stroke="#5D4037" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M50 72 Q57 76 64 74" stroke="#5D4037" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- tronco -->
+      <path d="M38 72 Q36 54 39 38" stroke="#6D4C41" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <path d="M52 72 Q54 54 51 38" stroke="#5D4037" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <!-- ramas -->
+      <path d="M44 44 Q28 38 20 28" stroke="#6D4C41" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M46 40 Q62 34 70 24" stroke="#6D4C41" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- copa -->
+      <ellipse cx="45" cy="50" rx="28" ry="12" fill="#33691E" opacity=".8"/>
+      <ellipse cx="28" cy="36" rx="16" ry="12" fill="#388E3C"/>
+      <ellipse cx="62" cy="32" rx="16" ry="12" fill="#43A047"/>
+      <ellipse cx="45" cy="25" rx="20" ry="13" fill="#558B2F"/>
+      <!-- frutos rojos -->
+      <circle cx="24" cy="38" r="5.5" fill="#E53935"/>
+      <circle cx="24" cy="38" r="3.5" fill="#EF5350"/>
+      <circle cx="22" cy="36" r="1.5" fill="rgba(255,255,255,.4)"/>
+      <path d="M24 32 Q25 28 27 26" stroke="#4CAF50" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <!-- fruto naranja -->
+      <circle cx="66" cy="30" r="5" fill="#F57C00"/>
+      <circle cx="66" cy="30" r="3" fill="#FF9800"/>
+      <circle cx="64" cy="28" r="1.5" fill="rgba(255,255,255,.4)"/>
+      <path d="M66 25 Q67 21 69 19" stroke="#4CAF50" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <!-- fruto amarillo -->
+      <circle cx="45" cy="18" r="4.5" fill="#F9A825"/>
+      <circle cx="45" cy="18" r="2.8" fill="#FDD835"/>
+      <circle cx="43" cy="16" r="1.2" fill="rgba(255,255,255,.4)"/>
+      <path d="M45 13 Q44 9 44 7" stroke="#4CAF50" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </svg>`
+  }
+];
+
 // ── SECURITY ──────────────────────────────────────────────────
-document.addEventListener('copy', e=>{
-  if(S.adminAuth) return;
-  e.preventDefault(); showCopyToast();
-});
-document.addEventListener('contextmenu', e=>{
-  if(S.adminAuth) return;
-  e.preventDefault(); showCopyToast();
-});
+document.addEventListener('copy', e=>{ if(S.adminAuth) return; e.preventDefault(); showCopyToast(); });
+document.addEventListener('contextmenu', e=>{ if(S.adminAuth) return; e.preventDefault(); showCopyToast(); });
 function showCopyToast(){
   const el=document.getElementById('copy-toast');
   el.style.display='block';
@@ -218,6 +395,7 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 function normalizeName(s){ return String(s||'').toLowerCase().trim().replace(/\s+/g,' '); }
 function render(){
   switch(S.view){
+    case 'selector':    renderSelector(); break;
     case 'inicio':      renderInicio(); break;
     case 'registro':    renderRegistro(); break;
     case 'examen':      renderExamen(); break;
@@ -229,33 +407,92 @@ function render(){
   }
 }
 
-// ── INICIO ─────────────────────────────────────────────────────
+// ── SELECTOR DE GRADO ──────────────────────────────────────────
+function renderSelector(){
+  document.getElementById('nav-sub').textContent = '';
+  let html = `<div class="selector-wrap">
+    <div class="selector-titulo" style="color:var(--sub)">Selecciona tu grado para ver los exámenes disponibles</div>`;
+
+  GRADOS_CONFIG.forEach(g => {
+    const disabled = !g.disponible ? 'class="grado-btn grado-unavail"' : 'class="grado-btn"';
+    const onclick = g.disponible ? `onclick="seleccionarGrado('${g.nivel}')"` : '';
+    html += `<button ${disabled} ${onclick}
+      style="background:linear-gradient(135deg, ${g.g1} 0%, ${g.g2} 100%)">
+      <div class="grado-btn-left">
+        <div class="grado-num">${g.nivel}</div>
+        <div class="grado-nombre">${g.nombre}</div>
+        <div class="grado-etapa">${g.etapa}</div>
+      </div>
+      <div class="grado-btn-right">${g.svg}</div>
+      ${!g.disponible ? '<span class="grado-tag">Próximamente</span>' : ''}
+    </button>`;
+  });
+
+  html += '</div>';
+  document.getElementById('main-content').innerHTML = html;
+}
+
+function seleccionarGrado(nivel){
+  S.gradoSeleccionado = nivel;
+  S.view = 'inicio';
+  render();
+}
+
+// ── INICIO (filtrado por grado) ────────────────────────────────
 async function renderInicio(){
-  document.getElementById('nav-sub').textContent='';
-  const {data}=await sb.from('examenes')
+  const gc = GRADOS_CONFIG.find(g => g.nivel === S.gradoSeleccionado) || {};
+  document.getElementById('nav-sub').textContent = S.gradoSeleccionado || '';
+
+  const {data} = await sb.from('examenes')
     .select('id,titulo,descripcion,grado,periodo,tiempo_minutos,activo,secciones_activas,validar_lista')
-    .eq('activo',true).order('created_at',{ascending:false});
-  S.examenes=data||[];
-  let html='<div class="card">';
-  if(S.examenes.length===0){
-    html+='<div style="text-align:center;padding:40px 0;color:var(--sub)"><div style="font-size:40px;margin-bottom:12px">&#128197;</div><div style="font-size:16px;font-weight:700">No hay examenes activos</div><div style="font-size:13px;margin-top:6px">Consulta con tu docente.</div></div>';
+    .eq('activo', true)
+    .eq('grado', S.gradoSeleccionado)
+    .order('created_at', {ascending:false});
+  S.examenes = data || [];
+
+  // Header con color del grado y botón volver
+  let html = `
+  <div style="background:linear-gradient(135deg,${gc.g1||'#1B3A6B'} 0%,${gc.g2||'#0D2B52'} 100%);
+    border-radius:14px;padding:16px 20px;margin-bottom:14px;
+    display:flex;align-items:center;gap:14px">
+    <div style="flex:1">
+      <div style="font-size:11px;color:rgba(255,255,255,.7);text-transform:uppercase;
+        letter-spacing:.06em;font-weight:700">Exámenes disponibles</div>
+      <div style="font-size:22px;font-weight:700;color:#fff;line-height:1.2">${gc.nivel || ''} — ${gc.nombre || ''}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.65);font-style:italic">${gc.etapa || ''}</div>
+    </div>
+    <div style="width:64px;height:56px;opacity:.85">${gc.svg || ''}</div>
+  </div>
+  <div style="margin-bottom:10px">
+    <button class="btn btn-outline btn-sm" onclick="S.view='selector';render()">
+      &#8592; Cambiar grado
+    </button>
+  </div>
+  <div class="card">`;
+
+  if(S.examenes.length === 0){
+    html += `<div style="text-align:center;padding:40px 0;color:var(--sub)">
+      <div style="font-size:40px;margin-bottom:12px">&#128197;</div>
+      <div style="font-size:16px;font-weight:700">No hay exámenes activos para ${S.gradoSeleccionado}</div>
+      <div style="font-size:13px;margin-top:6px">Consulta con tu docente cuándo estará disponible.</div>
+    </div>`;
   } else {
-    html+='<h2>Examenes disponibles</h2>';
-    S.examenes.forEach(ex=>{
-      const secs=(ex.secciones_activas||[]);
-      const secsLabel=secs.length>0?'Secciones: '+secs.join(', '):'Todas las secciones';
-      html+=`<div class="exam-row">
+    html += `<h2 style="margin-bottom:14px">Exámenes de ${gc.nombre}</h2>`;
+    S.examenes.forEach(ex => {
+      const secs = (ex.secciones_activas || []);
+      const secsLabel = secs.length > 0 ? 'Secciones: ' + secs.join(', ') : 'Todas las secciones';
+      html += `<div class="exam-row">
         <div class="exam-info">
           <div class="exam-name">${esc(ex.titulo)}</div>
           <div class="exam-meta">${esc(ex.grado)} · Periodo ${ex.periodo} · ${secsLabel}${ex.tiempo_minutos>0?' · '+ex.tiempo_minutos+' min':''}</div>
-          ${ex.validar_lista?'<div style="font-size:11px;color:var(--ve);margin-top:2px">Verificacion de lista activa</div>':''}
+          ${ex.validar_lista?'<div style="font-size:11px;color:var(--ve);margin-top:2px">Verificación de lista activa</div>':''}
         </div>
         <button class="btn btn-primary" onclick="iniciarExamen('${ex.id}')">Comenzar</button>
       </div>`;
     });
   }
-  html+='</div>';
-  document.getElementById('main-content').innerHTML=html;
+  html += '</div>';
+  document.getElementById('main-content').innerHTML = html;
 }
 
 // ── REGISTRO ───────────────────────────────────────────────────
@@ -278,7 +515,7 @@ function renderRegistro(){
     <h2>${esc(ex.titulo)}</h2>
     ${ex.descripcion?`<div style="color:var(--sub);font-size:14px;margin-bottom:12px">${esc(ex.descripcion)}</div>`:''}
     ${ex.instrucciones?`<div class="info-box"><strong>Instrucciones:</strong> ${esc(ex.instrucciones)}</div>`:''}
-    ${ex.validar_lista?'<div class="warn-box">Tu nombre y numero seran verificados contra la lista del curso. Escribe exactamente como aparece en tu lista.</div>':''}
+    ${ex.validar_lista?'<div class="warn-box">Tu nombre y número serán verificados contra la lista del curso. Escríbelo exactamente como aparece.</div>':''}
     <label for="r-nombre">Nombre completo *</label>
     <div class="secure-area">
       <input type="text" id="r-nombre" maxlength="80" placeholder="Escribe tu nombre completo" autocomplete="off">
@@ -286,21 +523,21 @@ function renderRegistro(){
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div>
-        <label for="r-orden">Numero de orden *</label>
+        <label for="r-orden">Número de orden *</label>
         <input type="number" id="r-orden" min="1" max="50" placeholder="Ej: 12">
       </div>
       <div>
-        <label for="r-seccion">Seccion *</label>
+        <label for="r-seccion">Sección *</label>
         <select id="r-seccion"><option value="">-- Selecciona --</option>${secOptions}</select>
       </div>
     </div>
     <label for="r-grado">Grado *</label>
     <select id="r-grado">
       <option value="">-- Selecciona --</option>
-      <option value="2do">2do Grado</option>
-      <option value="4to">4to Grado</option>
-      <option value="5to">5to Grado</option>
-      <option value="6to">6to Grado</option>
+      <option value="2do" ${S.gradoSeleccionado==='2do'?'selected':''}>2do Grado</option>
+      <option value="4to" ${S.gradoSeleccionado==='4to'?'selected':''}>4to Grado</option>
+      <option value="5to" ${S.gradoSeleccionado==='5to'?'selected':''}>5to Grado</option>
+      <option value="6to" ${S.gradoSeleccionado==='6to'?'selected':''}>6to Grado</option>
     </select>
     <div id="reg-error" style="display:none" class="warn-box" style="margin-top:10px"></div>
     <div class="btn-row">
@@ -322,41 +559,33 @@ async function confirmarRegistro(){
   errEl.style.display='none';
   if(!nombre||!seccion||!grado||orden<1){showErr('Completa todos los campos correctamente.');return;}
   btn.disabled=true; btn.textContent='Verificando...';
-
-  // Check section restriction
   const secs=S.examen.secciones_activas||[];
   if(secs.length>0 && !secs.includes(seccion)){
-    showErr('Este examen no esta habilitado para la seccion '+seccion+'. Secciones autorizadas: '+secs.join(', '));
+    showErr('Este examen no está habilitado para la sección '+seccion+'. Secciones autorizadas: '+secs.join(', '));
     btn.disabled=false; btn.textContent='Comenzar examen'; return;
   }
-
-  // Check student list if required
   if(S.examen.validar_lista){
     const {data:estFound}=await sb.from('estudiantes_lista')
       .select('id,nombre,numero_orden').eq('grado',grado).eq('seccion',seccion)
       .eq('numero_orden',orden).eq('activo',true);
     if(!estFound||estFound.length===0){
-      showErr('El numero '+orden+' no esta registrado en la lista de '+grado+' seccion '+seccion+'. Verifica con tu docente.');
+      showErr('El número '+orden+' no está registrado en la lista de '+grado+' sección '+seccion+'.');
       btn.disabled=false; btn.textContent='Comenzar examen'; return;
     }
     const match=estFound.find(e=>normalizeName(e.nombre).includes(normalizeName(nombre).split(' ')[0])||normalizeName(nombre).includes(normalizeName(e.nombre).split(' ')[0]));
     if(!match){
-      showErr('El nombre no coincide con el numero '+orden+' en la lista. Nombre esperado: '+estFound[0].nombre);
+      showErr('El nombre no coincide con el número '+orden+'. Nombre esperado: '+estFound[0].nombre);
       btn.disabled=false; btn.textContent='Comenzar examen'; return;
     }
   }
-
-  // Check duplicate submission
   const {data:dup}=await sb.from('respuestas_examenes').select('id')
     .eq('examen_id',S.examen.id).eq('numero_orden',orden).eq('seccion',seccion).eq('grado',grado).limit(1);
   if(dup&&dup.length>0){
-    showErr('Ya hay una respuesta registrada para el numero '+orden+' de la seccion '+seccion+'. Solo se permite un envio por estudiante.');
+    showErr('Ya hay una respuesta registrada para el número '+orden+' de la sección '+seccion+'. Solo se permite un envío.');
     btn.disabled=false; btn.textContent='Comenzar examen'; return;
   }
-
   S.est={nombre,orden,grado,seccion};
-  S.view='examen';
-  S.currentQ=0;
+  S.view='examen'; S.currentQ=0;
   (S.examen.preguntas||[]).forEach((q,i)=>{ if(q.tipo==='ordenar') S.ordenItems[i]=[...q.items]; });
   render();
   if(S.examen.tiempo_minutos>0) startTimer(S.examen.tiempo_minutos);
@@ -370,15 +599,12 @@ function renderExamen(){
   const resp_count=Object.keys(S.resp).length;
   document.getElementById('nav-sub').textContent=S.est.nombre+' · '+S.est.seccion;
   const pct=qs.length>0?Math.round(resp_count/qs.length*100):0;
-
-  // Navigator dots
   let navDots=qs.map((_,i)=>{
     const ans=S.resp[i]!==undefined&&S.resp[i]!==null&&S.resp[i]!=='';
     const active=i===qi;
     let bg=active?'#1B3A6B':(ans?'#1B5E20':'#ccc');
     return `<div onclick="goToQ(${i})" style="width:${active?'28px':'10px'};height:10px;border-radius:5px;background:${bg};cursor:pointer;transition:.2s;flex-shrink:0"></div>`;
   }).join('');
-
   let html=`
   <div style="background:#fff;border:1px solid var(--brd);border-radius:10px;padding:12px 14px;margin-bottom:12px;position:sticky;top:52px;z-index:10">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -391,11 +617,7 @@ function renderExamen(){
       <div style="flex:1;height:4px;background:#e0e0e0;border-radius:0 2px 2px 0"></div>
     </div>
   </div>`;
-
-  // Show ONLY current question
   html += renderPregunta(qs[qi], qi);
-
-  // Navigation buttons
   const isLast = qi === qs.length-1;
   const answered = S.resp[qi]!==undefined && S.resp[qi]!==null && S.resp[qi]!=='';
   html+=`<div style="display:flex;gap:10px;margin-top:4px">
@@ -406,7 +628,6 @@ function renderExamen(){
     }
   </div>
   <div style="font-size:12px;color:var(--sub);text-align:center;margin-top:8px">${qs.length-resp_count>0?qs.length-resp_count+' sin responder':'Todas respondidas'}</div>`;
-
   document.getElementById('main-content').innerHTML=html;
   document.querySelectorAll('.secure-txt').forEach(el=>secureEl(el));
   initDrag();
@@ -414,7 +635,6 @@ function renderExamen(){
 }
 
 function goToQ(i){
-  // Save any open textarea first
   document.querySelectorAll('.secure-txt').forEach(el=>{
     if(el.id&&el.id.startsWith('txt_')){const qi=parseInt(el.id.split('_')[1]);if(el.value.trim())S.resp[qi]=el.value.trim();}
     if(el.id&&el.id.startsWith('bl_')){const p=el.id.split('_');const qi=parseInt(p[1]),bi=parseInt(p[2]);if(!S.resp[qi])S.resp[qi]={};S.resp[qi][bi]=el.value.trim();}
@@ -433,12 +653,12 @@ function renderPregunta(q,i){
       const L=['A','B','C','D'];
       inner='<div class="op-list">'+(q.opciones||[]).map((op,oi)=>`
         <button class="op-btn${resp===oi?' selected':''}" onclick="setR(${i},${oi});renderExamen()" style="${resp===oi?'border-width:2.5px;border-color:#1B3A6B;background:#DCE8F5;font-weight:700':''}">
-          <div class="op-letra" style="${resp===oi?'background:#1B3A6B;content:\"X\"':''}">${resp===oi?'&#10003;':L[oi]}</div>
+          <div class="op-letra" style="${resp===oi?'background:#1B3A6B':''}">${resp===oi?'&#10003;':L[oi]}</div>
           <span>${esc(op)}</span>
         </button>`).join('')+'</div>'; break;
     case 'texto':
       inner=`<div class="secure-area">
-        <textarea class="secure-txt" id="txt_${i}" rows="4" placeholder="Escribe tu respuesta aqui..."
+        <textarea class="secure-txt" id="txt_${i}" rows="4" placeholder="Escribe tu respuesta aquí..."
           oninput="setR(${i},this.value);updateProg()">${esc(resp||'')}</textarea>
         <span class="secure-icon">sin pegar</span></div>`; break;
     case 'vf':
@@ -477,18 +697,7 @@ function renderPregunta(q,i){
 
 function setR(qi,v){S.resp[qi]=v;}
 function setRBlank(qi,bi,v){if(!S.resp[qi])S.resp[qi]={};S.resp[qi][bi]=v;}
-function updateProg(){
-  // In step mode just update answer count in nav
-  const qs=S.examen.preguntas||[];
-  const n=Object.keys(S.resp).length;
-  // Update nav dots to reflect answered state
-  qs.forEach((_,i)=>{
-    const ans=S.resp[i]!==undefined&&S.resp[i]!==null&&S.resp[i]!=='';
-    const active=i===(S.currentQ||0);
-    const allDots=document.querySelectorAll('.nav-dots-wrapper>div');
-    if(allDots[i]){allDots[i].style.background=active?'#1B3A6B':(ans?'#1B5E20':'#ccc');}
-  });
-}
+function updateProg(){ }
 
 function initDrag(){
   document.querySelectorAll('.orden-list').forEach(list=>{
@@ -518,97 +727,31 @@ function initDrag(){
   });
 }
 
-
-// ── AUTO-GRADING ENGINE ────────────────────────────────────────
+// ── AUTO-GRADING ───────────────────────────────────────────────
 function normText(s){
-  return String(s||'').toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g,'')
-    .replace(/[^a-z0-9 ]/g,'').trim();
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,'').trim();
 }
-
 function calcularNota(examen, respuestas){
-  const qs = examen.preguntas||[];
-  const detalle = [];
-  let puntos_auto = 0;
-  let puntos_texto_max = 0;
-  let puntos_maximo = 0;
-
-  qs.forEach((q, i)=>{
-    const pts = q.puntos||0;
-    puntos_maximo += pts;
-    const resp = respuestas[i];
-    const item = {qi:i, tipo:q.tipo, pts_max:pts, pts:0, auto:false, pendiente:false};
-
+  const qs=examen.preguntas||[];
+  const detalle=[]; let puntos_auto=0, puntos_texto_max=0, puntos_maximo=0;
+  qs.forEach((q,i)=>{
+    const pts=q.puntos||0; puntos_maximo+=pts;
+    const resp=respuestas[i];
+    const item={qi:i,tipo:q.tipo,pts_max:pts,pts:0,auto:false,pendiente:false};
     switch(q.tipo){
-      case 'multiple':{
-        item.auto = true;
-        const L=['A','B','C','D'];
-        const corrIdx = L.indexOf(q.correcta);
-        if(resp===corrIdx) item.pts = pts;
-        break;
-      }
-      case 'vf':{
-        item.auto = true;
-        if(String(resp)===String(q.correcta)) item.pts = pts;
-        break;
-      }
-      case 'ordenar':{
-        item.auto = true;
-        const correctOrder = q.items||[];
-        const studentOrder = Array.isArray(resp) ? resp : [];
-        if(studentOrder.length===0){item.pts=0;break;}
-        // Score by position matches
-        let matches=0;
-        correctOrder.forEach((it,ci)=>{
-          if(normText(studentOrder[ci])===normText(it)) matches++;
-        });
-        // Full marks only if perfect order, partial for partial
-        if(matches===correctOrder.length){
-          item.pts = pts;
-        } else if(matches >= Math.ceil(correctOrder.length/2)){
-          item.pts = Math.round(pts * matches / correctOrder.length);
-        }
-        item.detalle = matches+'/'+correctOrder.length+' en orden correcto';
-        break;
-      }
-      case 'completar':{
-        item.auto = true;
-        const correctBlanks = q.respuestas||[]; // array of correct answers per blank
-        if(correctBlanks.length===0){item.pts=pts;break;} // no key = full marks
-        const studentBlanks = resp&&typeof resp==='object' ? resp : {};
-        let blancoCorrectos=0;
-        correctBlanks.forEach((correct,bi)=>{
-          const given = normText(studentBlanks[bi]||'');
-          const correctNorm = normText(correct);
-          // Accept partial match (at least 60% of correct word)
-          if(given===correctNorm || (given.length>3 && correctNorm.includes(given)) || (correctNorm.length>3 && given.includes(correctNorm.substring(0,Math.ceil(correctNorm.length*0.6))))){
-            blancoCorrectos++;
-          }
-        });
-        item.pts = Math.round(pts * blancoCorrectos / correctBlanks.length);
-        item.detalle = blancoCorrectos+'/'+correctBlanks.length+' blancos correctos';
-        break;
-      }
-      case 'texto':{
-        item.pendiente = true;
-        puntos_texto_max += pts;
-        break;
-      }
-      case 'escala':
-      case 'ordenar_libre':{
-        item.auto = true;
-        item.pts = resp!==undefined&&resp!==null&&resp!=='' ? pts : 0;
-        item.detalle = 'participacion';
-        break;
-      }
+      case 'multiple':{item.auto=true;const L=['A','B','C','D'];const corrIdx=L.indexOf(q.correcta);if(resp===corrIdx)item.pts=pts;break;}
+      case 'vf':{item.auto=true;if(String(resp)===String(q.correcta))item.pts=pts;break;}
+      case 'ordenar':{item.auto=true;const correctOrder=q.items||[];const studentOrder=Array.isArray(resp)?resp:[];if(studentOrder.length===0){item.pts=0;break;}let matches=0;correctOrder.forEach((it,ci)=>{if(normText(studentOrder[ci])===normText(it))matches++;});if(matches===correctOrder.length){item.pts=pts;}else if(matches>=Math.ceil(correctOrder.length/2)){item.pts=Math.round(pts*matches/correctOrder.length);}item.detalle=matches+'/'+correctOrder.length+' en orden correcto';break;}
+      case 'completar':{item.auto=true;const correctBlanks=q.respuestas||[];if(correctBlanks.length===0){item.pts=pts;break;}const studentBlanks=resp&&typeof resp==='object'?resp:{};let blancoCorrectos=0;correctBlanks.forEach((correct,bi)=>{const given=normText(studentBlanks[bi]||'');const correctNorm=normText(correct);if(given===correctNorm||(given.length>3&&correctNorm.includes(given))||(correctNorm.length>3&&given.includes(correctNorm.substring(0,Math.ceil(correctNorm.length*0.6))))){blancoCorrectos++;}});item.pts=Math.round(pts*blancoCorrectos/correctBlanks.length);item.detalle=blancoCorrectos+'/'+correctBlanks.length+' blancos correctos';break;}
+      case 'texto':{item.pendiente=true;puntos_texto_max+=pts;break;}
+      case 'escala':{item.auto=true;item.pts=resp!==undefined&&resp!==null&&resp!==''?pts:0;item.detalle='participacion';break;}
     }
-
-    if(item.auto) puntos_auto += item.pts;
+    if(item.auto) puntos_auto+=item.pts;
     detalle.push(item);
   });
-
-  return {puntos_auto, puntos_texto_max, puntos_maximo, detalle};
+  return {puntos_auto,puntos_texto_max,puntos_maximo,detalle};
 }
+
 async function submitExamen(auto){
   if(!auto){
     const qs=S.examen.preguntas||[];
@@ -616,31 +759,20 @@ async function submitExamen(auto){
     if(sin>0&&!confirm('Tienes '+sin+' pregunta(s) sin responder. ¿Enviar de todas formas?')) return;
   }
   stopTimer();
-  // Collect remaining text
   document.querySelectorAll('.secure-txt').forEach(el=>{
     if(el.id&&el.id.startsWith('txt_')){const qi=parseInt(el.id.split('_')[1]);if(el.value.trim())S.resp[qi]=el.value.trim();}
     if(el.id&&el.id.startsWith('bl_')){const p=el.id.split('_');const qi=parseInt(p[1]),bi=parseInt(p[2]);if(!S.resp[qi])S.resp[qi]={};S.resp[qi][bi]=el.value.trim();}
   });
-  // Auto-grade
-  const {puntos_auto, puntos_texto_max, puntos_maximo, detalle} = calcularNota(S.examen, S.resp);
-  const tiene_texto = puntos_texto_max > 0;
-
-  const {data:rpcData, error}=await sb.rpc('public_enviar_respuesta',{
-    p_examen_id:     S.examen.id,
-    p_nombre:        S.est.nombre,
-    p_numero_orden:  parseInt(S.est.orden)||0,
-    p_grado:         S.est.grado,
-    p_seccion:       S.est.seccion,
-    p_respuestas:    S.resp,
-    p_tiempo_seg:    tiempoUsado(),
-    p_puntos_auto:   puntos_auto,
-    p_puntos_maximo: puntos_maximo,
-    p_detalle_notas: detalle,
-    p_tiene_texto:   tiene_texto
+  const {puntos_auto,puntos_texto_max,puntos_maximo,detalle}=calcularNota(S.examen,S.resp);
+  const tiene_texto=puntos_texto_max>0;
+  const {data:rpcData,error}=await sb.rpc('public_enviar_respuesta',{
+    p_examen_id:S.examen.id, p_nombre:S.est.nombre,
+    p_numero_orden:parseInt(S.est.orden)||0, p_grado:S.est.grado, p_seccion:S.est.seccion,
+    p_respuestas:S.resp, p_tiempo_seg:tiempoUsado(),
+    p_puntos_auto:puntos_auto, p_puntos_maximo:puntos_maximo,
+    p_detalle_notas:detalle, p_tiene_texto:tiene_texto
   });
-  if(!error && rpcData?.error){ 
-    toast('No se pudo enviar: '+rpcData.error, 4000); return;
-  }
+  if(!error&&rpcData?.error){toast('No se pudo enviar: '+rpcData.error,4000);return;}
   if(error){toast('Error al guardar: '+error.message,4000);return;}
   S.view='enviado'; render();
 }
@@ -654,9 +786,11 @@ function renderEnviado(){
     <p style="color:var(--sub);margin-bottom:16px">Tus respuestas fueron guardadas, ${esc(S.est.nombre)}.</p>
     <div class="success-box" style="display:inline-block;text-align:left">
       <div><strong>Examen:</strong> ${esc(S.examen.titulo)}</div>
-      <div><strong>Grado/Seccion:</strong> ${esc(S.est.grado)} — ${esc(S.est.seccion)} · Orden: ${S.est.orden}</div>
+      <div><strong>Grado/Sección:</strong> ${esc(S.est.grado)} — ${esc(S.est.seccion)} · Orden: ${S.est.orden}</div>
     </div>
-    <div style="margin-top:20px"><button class="btn btn-outline" onclick="S.view='inicio';render()">Volver al inicio</button></div>
+    <div style="margin-top:20px">
+      <button class="btn btn-outline" onclick="S.view='inicio';render()">Ver más exámenes</button>
+    </div>
   </div>`;
 }
 
@@ -672,7 +806,7 @@ function renderAdminLogin(){
     <label for="pin-in">PIN</label>
     <input type="password" id="pin-in" maxlength="10" placeholder="Ingresa el PIN" onkeydown="if(event.key==='Enter')checkPin()">
     <div class="btn-row">
-      <button class="btn btn-outline" onclick="S.view='inicio';render()">Cancelar</button>
+      <button class="btn btn-outline" onclick="S.view='selector';render()">Cancelar</button>
       <button class="btn btn-primary" onclick="checkPin()">Ingresar</button>
     </div>
   </div>`;
@@ -682,14 +816,13 @@ async function checkPin(){
   const hash=await sha256(pin);
   const {data}=await sb.from('admin_config').select('pin_hash').single();
   if(data&&data.pin_hash===hash){
-    S.adminAuth=true;
-    S.pinHash=hash; // Store for RPC calls
+    S.adminAuth=true; S.pinHash=hash;
     document.getElementById('btn-admin').textContent='Salir';
     document.getElementById('btn-admin').onclick=adminLogout;
     S.view='admin'; render();
   } else { toast('PIN incorrecto'); }
 }
-function adminLogout(){ S.adminAuth=false; S.view='inicio'; document.getElementById('btn-admin').textContent='Admin'; document.getElementById('btn-admin').onclick=showAdminLogin; render(); }
+function adminLogout(){S.adminAuth=false;S.view='selector';document.getElementById('btn-admin').textContent='Admin';document.getElementById('btn-admin').onclick=showAdminLogin;render();}
 async function sha256(m){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
 
 // ── ADMIN ─────────────────────────────────────────────────────
@@ -698,14 +831,11 @@ async function renderAdmin(){
   if(S.adminTab==='examenes') tabContent=await buildExamenesTab();
   else if(S.adminTab==='lista') tabContent=await buildListaTab();
   else if(S.adminTab==='historial') tabContent=await buildHistorialTab();
-
   document.getElementById('main-content').innerHTML=`
   <div class="card" style="padding-bottom:0">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
-      <h2 style="margin:0">Panel de administracion</h2>
-    </div>
+    <h2 style="margin:0 0 0 0">Panel de administración</h2>
     <div class="admin-tabs">
-      <div class="admin-tab${S.adminTab==='examenes'?' active':''}" onclick="S.adminTab='examenes';renderAdmin()">Examenes</div>
+      <div class="admin-tab${S.adminTab==='examenes'?' active':''}" onclick="S.adminTab='examenes';renderAdmin()">Exámenes</div>
       <div class="admin-tab${S.adminTab==='lista'?' active':''}" onclick="S.adminTab='lista';renderAdmin()">Lista de estudiantes</div>
       <div class="admin-tab${S.adminTab==='historial'?' active':''}" onclick="S.adminTab='historial';renderAdmin()">Historial archivado</div>
     </div>
@@ -713,10 +843,12 @@ async function renderAdmin(){
   <div id="tab-content">${tabContent}</div>`;
 }
 
-// ── TAB: EXAMENES ──────────────────────────────────────────────
 async function buildExamenesTab(){
-  const {data}=await sb.from('examenes').select('id,titulo,grado,periodo,activo,tiempo_minutos,secciones_activas,validar_lista,created_at').order('created_at',{ascending:false});
+  const {data}=await sb.from('examenes').select('id,titulo,grado,periodo,activo,tiempo_minutos,secciones_activas,validar_lista,created_at').order('grado').order('created_at',{ascending:false});
   S.examenes=data||[];
+  // Agrupar por grado
+  const porGrado={};
+  S.examenes.forEach(ex=>{if(!porGrado[ex.grado])porGrado[ex.grado]=[];porGrado[ex.grado].push(ex);});
   let html=`<div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <span style="font-size:14px;color:var(--sub)">${S.examenes.length} examen(es)</span>
@@ -727,47 +859,51 @@ async function buildExamenesTab(){
     </div>
     <div id="import-json-area" style="display:none;background:#F0F4F8;border-radius:8px;padding:14px;margin-bottom:12px">
       <div style="font-size:13px;font-weight:700;color:var(--sub);margin-bottom:8px">Importar examen desde JSON</div>
-      <div style="font-size:12px;color:var(--sub);margin-bottom:8px">Pega el contenido del archivo .json:</div>
       <textarea id="json-input" rows="5" style="font-size:12px;font-family:monospace" placeholder="{}"></textarea>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-json-area').style.display='none'">Cancelar</button>
         <button class="btn btn-primary btn-sm" onclick="procesarImportJSON()">Importar examen</button>
       </div>
     </div>`;
-  if(S.examenes.length===0) html+='<p style="color:var(--sub);text-align:center;padding:24px">Sin examenes todavia.</p>';
-  else S.examenes.forEach(ex=>{
-    const secs=(ex.secciones_activas||[]);
-    const secsLabel=secs.length>0?'Sec: '+secs.join(','):'Todas las secciones';
-    html+=`<div class="exam-row">
-      <div class="exam-info">
-        <div class="exam-name">${esc(ex.titulo)}</div>
-        <div class="exam-meta">${esc(ex.grado)} · P${ex.periodo} · ${secsLabel}${ex.tiempo_minutos>0?' · '+ex.tiempo_minutos+'min':''}</div>
-        <div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">
-          <span class="badge ${ex.activo?'badge-on':'badge-off'}">${ex.activo?'Activo':'Cerrado'}</span>
-          ${ex.validar_lista?'<span class="badge badge-am">Verifica lista</span>':''}
-        </div>
-      </div>
-      <button class="toggle-btn ${ex.activo?'on':'off'}" onclick="toggleActivo('${ex.id}',${ex.activo})" title="Abrir/Cerrar">
-        <div class="toggle-knob"></div>
-      </button>
-      <button class="btn btn-outline btn-sm" onclick="verRespuestas('${ex.id}')">Respuestas</button>
-      <button class="btn btn-gray btn-sm" onclick="editarExamen('${ex.id}')">Editar</button>
-      <button class="btn btn-xs" style="background:var(--ro2);color:var(--ro);border:none;font-weight:700;cursor:pointer;border-radius:6px" onclick="eliminarExamen('${ex.id}','${esc(ex.titulo)}')">&#10005;</button>
-    </div>`;
-  });
-  html+='</div>';
-  return html;
+  if(S.examenes.length===0){html+='<p style="color:var(--sub);text-align:center;padding:24px">Sin exámenes todavía.</p>';}
+  else{
+    ['2do','4to','5to','6to'].forEach(grado=>{
+      const exs=porGrado[grado]||[];
+      if(exs.length===0) return;
+      const gc=GRADOS_CONFIG.find(g=>g.nivel===grado)||{};
+      html+=`<div style="margin-bottom:6px;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:700;color:#fff;background:linear-gradient(135deg,${gc.g1||'#555'} 0%,${gc.g2||'#333'} 100%)">${grado} — ${gc.nombre||''}</div>`;
+      exs.forEach(ex=>{
+        const secs=(ex.secciones_activas||[]);
+        const secsLabel=secs.length>0?'Sec: '+secs.join(','):'Todas las secciones';
+        html+=`<div class="exam-row">
+          <div class="exam-info">
+            <div class="exam-name">${esc(ex.titulo)}</div>
+            <div class="exam-meta">${esc(ex.grado)} · P${ex.periodo} · ${secsLabel}${ex.tiempo_minutos>0?' · '+ex.tiempo_minutos+'min':''}</div>
+            <div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">
+              <span class="badge ${ex.activo?'badge-on':'badge-off'}">${ex.activo?'Activo':'Cerrado'}</span>
+              ${ex.validar_lista?'<span class="badge badge-am">Verifica lista</span>':''}
+            </div>
+          </div>
+          <button class="toggle-btn ${ex.activo?'on':'off'}" onclick="toggleActivo('${ex.id}',${ex.activo})" title="Abrir/Cerrar"><div class="toggle-knob"></div></button>
+          <button class="btn btn-outline btn-sm" onclick="verRespuestas('${ex.id}')">Respuestas</button>
+          <button class="btn btn-gray btn-sm" onclick="editarExamen('${ex.id}')">Editar</button>
+          <button class="btn btn-xs" style="background:var(--ro2);color:var(--ro);border:none;font-weight:700;cursor:pointer;border-radius:6px" onclick="eliminarExamen('${ex.id}','${esc(ex.titulo)}')">&#10005;</button>
+        </div>`;
+      });
+    });
+  }
+  html+='</div>'; return html;
 }
 
 async function toggleActivo(id,actual){
-  const {error} = await rpcAdmin('admin_toggle_examen',{p_id:id, p_activo:!actual});
+  const {error}=await rpcAdmin('admin_toggle_examen',{p_id:id,p_activo:!actual});
   if(error){toast('Error: '+error.message,4000);return;}
   toast(actual?'Examen cerrado':'Examen abierto');
   S.adminTab='examenes'; renderAdmin();
 }
 async function eliminarExamen(id,titulo){
-  if(!confirm('Eliminar "'+titulo+'" y TODAS sus respuestas? Esta accion no se puede deshacer.')) return;
-  const {error} = await rpcAdmin('admin_delete_examen',{p_id:id});
+  if(!confirm('Eliminar "'+titulo+'" y TODAS sus respuestas? Esta acción no se puede deshacer.')) return;
+  const {error}=await rpcAdmin('admin_delete_examen',{p_id:id});
   if(error){toast('Error: '+error.message,4000);return;}
   toast('Eliminado'); renderAdmin();
 }
@@ -777,24 +913,22 @@ async function editarExamen(id){
   S.view='admin-crear'; render();
 }
 
-// ── TAB: LISTA DE ESTUDIANTES ──────────────────────────────────
 async function buildListaTab(){
   const {data}=await sb.from('estudiantes_lista').select('*').order('grado').order('seccion').order('numero_orden');
   S.listaEst=data||[];
-  const grados=['2do','4to','5to','6to'];
-  const secs=['A','B','C','D'];
+  const grados=['2do','4to','5to','6to']; const secs=['A','B','C','D'];
   let html=`<div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <span style="font-size:14px;color:var(--sub)">${S.listaEst.length} estudiante(s) registrado(s)</span>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-outline btn-sm" onclick="mostrarImportarLista()">Importar CSV/Excel</button>
+        <button class="btn btn-outline btn-sm" onclick="mostrarImportarLista()">Importar CSV</button>
         <button class="btn btn-primary btn-sm" onclick="agregarEstudiante()">+ Agregar uno</button>
       </div>
     </div>
     <div id="import-area" style="display:none" class="form-sec">
       <div class="form-sec-title">Importar lista desde CSV</div>
-      <div class="info-box" style="margin-bottom:10px">Formato CSV: <strong>grado,seccion,numero_orden,nombre</strong><br>Ejemplo: 5to,A,1,Juan Perez Santos</div>
-      <textarea id="csv-input" rows="6" placeholder="2do,A,1,Maria Garcia Lopez&#10;2do,A,2,Carlos Martinez Perez&#10;5to,B,1,Ana Rodriguez Gomez"></textarea>
+      <div class="info-box" style="margin-bottom:10px">Formato: <strong>grado,seccion,numero_orden,nombre</strong></div>
+      <textarea id="csv-input" rows="6" placeholder="2do,A,1,Maria Garcia Lopez"></textarea>
       <div class="btn-row">
         <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-area').style.display='none'">Cancelar</button>
         <button class="btn btn-primary btn-sm" onclick="procesarCSV()">Importar</button>
@@ -804,8 +938,8 @@ async function buildListaTab(){
       <div class="form-sec-title">Agregar estudiante</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         <div><label>Grado</label><select id="ae-grado">${grados.map(g=>`<option>${g}</option>`).join('')}</select></div>
-        <div><label>Seccion</label><select id="ae-sec">${secs.map(s=>`<option>${s}</option>`).join('')}</select></div>
-        <div><label>Numero</label><input type="number" id="ae-num" min="1" max="50"></div>
+        <div><label>Sección</label><select id="ae-sec">${secs.map(s=>`<option>${s}</option>`).join('')}</select></div>
+        <div><label>Número</label><input type="number" id="ae-num" min="1" max="50"></div>
       </div>
       <label for="ae-nombre">Nombre completo</label>
       <input type="text" id="ae-nombre" placeholder="Nombre Apellido Apellido" maxlength="80">
@@ -814,58 +948,32 @@ async function buildListaTab(){
         <button class="btn btn-primary btn-sm" onclick="guardarEstudiante()">Guardar</button>
       </div>
     </div>`;
-
-  // Group by grado+seccion
   const grupos={};
-  S.listaEst.forEach(e=>{
-    const k=e.grado+'-'+e.seccion;
-    if(!grupos[k]) grupos[k]={grado:e.grado,seccion:e.seccion,items:[]};
-    grupos[k].items.push(e);
-  });
-
-  if(Object.keys(grupos).length===0){
-    html+='<p style="color:var(--sub);text-align:center;padding:20px">Sin estudiantes. Importa una lista o agrega uno.</p>';
-  } else {
-    Object.values(grupos).forEach(g=>{
-      html+=`<div style="margin-bottom:16px">
-        <div style="font-weight:700;font-size:13px;color:var(--az);margin-bottom:6px">${g.grado} — Seccion ${g.seccion} <span class="badge badge-gray">${g.items.length}</span>
-          <button class="btn btn-xs btn-danger" style="margin-left:8px" onclick="borrarSeccion('${g.grado}','${g.seccion}')">Borrar seccion</button>
-        </div>
-        <table class="est-table"><thead><tr><th>#</th><th>Nombre</th><th></th></tr></thead><tbody>
-        ${g.items.map(e=>`<tr>
-          <td>${e.numero_orden}</td>
-          <td>${esc(e.nombre)}</td>
-          <td><button class="btn btn-xs" style="background:var(--ro2);color:var(--ro);border:none;cursor:pointer;border-radius:4px" onclick="borrarEstudiante('${e.id}')">&#10005;</button></td>
-        </tr>`).join('')}
-        </tbody></table>
-      </div>`;
-    });
-  }
-  html+='</div>';
-  return html;
+  S.listaEst.forEach(e=>{const k=e.grado+'-'+e.seccion;if(!grupos[k])grupos[k]={grado:e.grado,seccion:e.seccion,items:[]};grupos[k].items.push(e);});
+  if(Object.keys(grupos).length===0){html+='<p style="color:var(--sub);text-align:center;padding:20px">Sin estudiantes registrados.</p>';}
+  else{Object.values(grupos).forEach(g=>{
+    html+=`<div style="margin-bottom:16px">
+      <div style="font-weight:700;font-size:13px;color:var(--az);margin-bottom:6px">${g.grado} — Sección ${g.seccion} <span class="badge badge-gray">${g.items.length}</span>
+        <button class="btn btn-xs btn-danger" style="margin-left:8px" onclick="borrarSeccion('${g.grado}','${g.seccion}')">Borrar sección</button>
+      </div>
+      <table class="est-table"><thead><tr><th>#</th><th>Nombre</th><th></th></tr></thead><tbody>
+      ${g.items.map(e=>`<tr><td>${e.numero_orden}</td><td>${esc(e.nombre)}</td><td><button class="btn btn-xs" style="background:var(--ro2);color:var(--ro);border:none;cursor:pointer;border-radius:4px" onclick="borrarEstudiante('${e.id}')">&#10005;</button></td></tr>`).join('')}
+      </tbody></table></div>`;
+  });}
+  html+='</div>'; return html;
 }
 
-function mostrarImportarLista(){
-  const a=document.getElementById('import-area');
-  a.style.display=a.style.display==='none'?'block':'none';
-}
-function agregarEstudiante(){
-  const a=document.getElementById('add-est-area');
-  a.style.display=a.style.display==='none'?'block':'none';
-}
+function mostrarImportarLista(){const a=document.getElementById('import-area');a.style.display=a.style.display==='none'?'block':'none';}
+function agregarEstudiante(){const a=document.getElementById('add-est-area');a.style.display=a.style.display==='none'?'block':'none';}
 async function procesarCSV(){
   const txt=document.getElementById('csv-input').value.trim();
   if(!txt){toast('Pega el contenido CSV');return;}
-  const lines=txt.split('\n').filter(l=>l.trim());
-  const rows=[];
-  const errores=[];
+  const lines=txt.split('\n').filter(l=>l.trim()); const rows=[]; const errores=[];
   lines.forEach((line,i)=>{
     const parts=line.split(',').map(p=>p.trim());
-    if(parts.length<4){errores.push('Linea '+(i+1)+': formato incorrecto');return;}
-    const [grado,seccion,num,...rest]=parts;
-    const nombre=rest.join(' ').trim();
-    const numero=parseInt(num);
-    if(!grado||!seccion||!numero||!nombre){errores.push('Linea '+(i+1)+': datos incompletos');return;}
+    if(parts.length<4){errores.push('Línea '+(i+1)+': formato incorrecto');return;}
+    const [grado,seccion,num,...rest]=parts; const nombre=rest.join(' ').trim(); const numero=parseInt(num);
+    if(!grado||!seccion||!numero||!nombre){errores.push('Línea '+(i+1)+': datos incompletos');return;}
     rows.push({grado,seccion:seccion.toUpperCase(),numero_orden:numero,nombre,activo:true});
   });
   if(errores.length>0){toast(errores.length+' errores: '+errores[0],4000);return;}
@@ -876,65 +984,41 @@ async function procesarCSV(){
   S.adminTab='lista'; renderAdmin();
 }
 async function guardarEstudiante(){
-  const grado=document.getElementById('ae-grado').value;
-  const seccion=document.getElementById('ae-sec').value;
-  const orden=parseInt(document.getElementById('ae-num').value)||0;
-  const nombre=document.getElementById('ae-nombre').value.trim();
+  const grado=document.getElementById('ae-grado').value; const seccion=document.getElementById('ae-sec').value;
+  const orden=parseInt(document.getElementById('ae-num').value)||0; const nombre=document.getElementById('ae-nombre').value.trim();
   if(!nombre||orden<1){toast('Completa todos los campos');return;}
   const {error}=await rpcAdmin('admin_upsert_estudiantes',{p_filas:[{grado,seccion,numero_orden:orden,nombre}]});
   if(error){toast('Error: '+error.message);return;}
-  toast('Estudiante guardado');
-  document.getElementById('add-est-area').style.display='none';
+  toast('Estudiante guardado'); document.getElementById('add-est-area').style.display='none';
   S.adminTab='lista'; renderAdmin();
 }
-async function borrarEstudiante(id){
-  if(!confirm('Eliminar este estudiante de la lista?')) return;
-  await rpcAdmin('admin_delete_estudiante',{p_id:id});
-  S.adminTab='lista'; renderAdmin();
-}
-async function borrarSeccion(grado,seccion){
-  if(!confirm('Borrar todos los estudiantes de '+grado+' seccion '+seccion+'?')) return;
-  await rpcAdmin('admin_delete_seccion',{p_grado:grado,p_seccion:seccion});
-  toast('Seccion borrada'); S.adminTab='lista'; renderAdmin();
-}
+async function borrarEstudiante(id){if(!confirm('Eliminar este estudiante?')) return;await rpcAdmin('admin_delete_estudiante',{p_id:id});S.adminTab='lista';renderAdmin();}
+async function borrarSeccion(grado,seccion){if(!confirm('Borrar todos los estudiantes de '+grado+' sección '+seccion+'?')) return;await rpcAdmin('admin_delete_seccion',{p_grado:grado,p_seccion:seccion});toast('Sección borrada');S.adminTab='lista';renderAdmin();}
 
-// ── TAB: HISTORIAL ARCHIVADO ───────────────────────────────────
 async function buildHistorialTab(){
   const {data}=await sb.from('respuestas_archivadas').select('*').order('archived_at',{ascending:false}).limit(200);
   const arch=data||[];
   let html=`<div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <span style="font-size:14px;color:var(--sub)">${arch.length} respuestas archivadas</span>
-      ${arch.length>0?`<div style="display:flex;gap:8px">
-        <button class="btn btn-success btn-sm" onclick="descargarHistorial()">Descargar Excel</button>
-        <button class="btn btn-danger btn-sm" onclick="borrarHistorial()">Borrar historial</button>
-      </div>`:''}
+      ${arch.length>0?`<div style="display:flex;gap:8px"><button class="btn btn-success btn-sm" onclick="descargarHistorial()">Descargar Excel</button><button class="btn btn-danger btn-sm" onclick="borrarHistorial()">Borrar historial</button></div>`:''}
     </div>`;
-  if(arch.length===0){
-    html+='<p style="color:var(--sub);text-align:center;padding:20px">Sin registros archivados todavia.</p>';
-  } else {
+  if(arch.length===0){html+='<p style="color:var(--sub);text-align:center;padding:20px">Sin registros archivados.</p>';}
+  else{
     const porExamen={};
-    arch.forEach(r=>{ const k=r.examen_titulo||r.examen_id; if(!porExamen[k])porExamen[k]=[]; porExamen[k].push(r); });
+    arch.forEach(r=>{const k=r.examen_titulo||r.examen_id;if(!porExamen[k])porExamen[k]=[];porExamen[k].push(r);});
     Object.entries(porExamen).forEach(([titulo,rows])=>{
-      html+=`<div style="margin-bottom:14px">
-        <div style="font-weight:700;font-size:13px;color:var(--az);margin-bottom:6px">${esc(titulo)} <span class="badge badge-gray">${rows.length}</span></div>
+      html+=`<div style="margin-bottom:14px"><div style="font-weight:700;font-size:13px;color:var(--az);margin-bottom:6px">${esc(titulo)} <span class="badge badge-gray">${rows.length}</span></div>
         <table class="est-table"><thead><tr><th>Nombre</th><th>Sec</th><th>Orden</th><th>Archivado</th></tr></thead><tbody>
-        ${rows.slice(0,10).map(r=>`<tr class="archived-row">
-          <td>${esc(r.nombre)}</td><td>${esc(r.seccion)}</td><td>${r.numero_orden}</td>
-          <td style="font-size:11px">${(r.archived_at||'').substring(0,16)}</td>
-        </tr>`).join('')}
-        ${rows.length>10?`<tr><td colspan="4" style="color:var(--sub);font-size:12px;text-align:center">... y ${rows.length-10} mas</td></tr>`:''}
-        </tbody></table>
-      </div>`;
+        ${rows.slice(0,10).map(r=>`<tr style="background:#FFFDE7"><td>${esc(r.nombre)}</td><td>${esc(r.seccion)}</td><td>${r.numero_orden}</td><td style="font-size:11px">${(r.archived_at||'').substring(0,16)}</td></tr>`).join('')}
+        ${rows.length>10?`<tr><td colspan="4" style="color:var(--sub);font-size:12px;text-align:center">... y ${rows.length-10} más</td></tr>`:''}
+        </tbody></table></div>`;
     });
   }
-  html+='</div>';
-  return html;
+  html+='</div>'; return html;
 }
 
 function descargarHistorial(){
-  const arch=S.respuestas||[];
-  // Re-fetch from DOM not ideal, just trigger page download
   toast('Descargando historial...');
   sb.from('respuestas_archivadas').select('*').order('archived_at',{ascending:false}).then(({data})=>{
     if(!data||data.length===0){toast('Sin datos');return;}
@@ -944,19 +1028,17 @@ function descargarHistorial(){
     const ws=XLSX.utils.aoa_to_sheet(rows);
     ws['!cols']=headers.map(()=>({wch:18}));
     XLSX.utils.book_append_sheet(wb,ws,'Historial');
-    const fecha=new Date().toISOString().substring(0,10);
-    XLSX.writeFile(wb,'historial_examenes_'+fecha+'.xlsx');
+    XLSX.writeFile(wb,'historial_examenes_'+new Date().toISOString().substring(0,10)+'.xlsx');
   });
 }
 async function borrarHistorial(){
-  if(!confirm('Borrar PERMANENTEMENTE todo el historial archivado? Esta accion no se puede deshacer.')) return;
+  if(!confirm('Borrar PERMANENTEMENTE todo el historial archivado?')) return;
   if(!confirm('Confirma: borrar TODO el historial?')) return;
-  const {error:errH} = await rpcAdmin('admin_borrar_historial',{});
-  if(errH){toast('Error: '+errH.message,4000);return;}
+  const {error}=await rpcAdmin('admin_borrar_historial',{});
+  if(error){toast('Error: '+error.message,4000);return;}
   toast('Historial borrado'); S.adminTab='historial'; renderAdmin();
 }
 
-// ── VER RESPUESTAS (activas) ───────────────────────────────────
 async function verRespuestas(id){
   const {data:ex}=await sb.from('examenes').select('*').eq('id',id).single();
   const {data:resp}=await sb.from('respuestas_examenes').select('*').eq('examen_id',id).order('submitted_at',{ascending:true});
@@ -965,9 +1047,7 @@ async function verRespuestas(id){
 }
 
 function renderAdminResp(){
-  const ex=S.adminExamen;
-  const qs=ex.preguntas||[];
-  const resps=S.respuestas;
+  const ex=S.adminExamen; const qs=ex.preguntas||[]; const resps=S.respuestas;
   let html=`<div class="card">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
       <button class="btn btn-outline btn-sm" onclick="S.view='admin';renderAdmin()">&#8592; Volver</button>
@@ -979,31 +1059,25 @@ function renderAdminResp(){
       <button class="btn btn-outline btn-sm" onclick="exportarWord()">Exportar Word</button>
       ${resps.length>0?`<button class="btn btn-warn btn-sm" onclick="archivarRespuestas()">Archivar y limpiar</button>`:''}
     </div>
-    ${ex.rubrica_txt?`<div class="info-box" style="margin-bottom:10px"><strong>Rubrica general:</strong> ${esc(ex.rubrica_txt)}</div>`:''}
+    ${ex.rubrica_txt?`<div class="info-box" style="margin-bottom:10px"><strong>Rúbrica general:</strong> ${esc(ex.rubrica_txt)}</div>`:''}
     <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
     <thead><tr style="background:var(--az);color:#fff">
       <th style="padding:8px;text-align:left">Nombre</th>
       <th style="padding:8px">Ord</th><th style="padding:8px">Sec</th>
-      <th style="padding:8px">Auto</th>
-      <th style="padding:8px">Texto</th>
+      <th style="padding:8px">Auto</th><th style="padding:8px">Texto</th>
       <th style="padding:8px;background:#1B5E20">Total</th>
-      <th style="padding:8px">/ Max</th>
-      <th style="padding:8px">%</th>
-      <th style="padding:8px">Estado</th>
+      <th style="padding:8px">/ Max</th><th style="padding:8px">%</th><th style="padding:8px">Estado</th>
     </tr></thead><tbody>`;
   resps.forEach((r,ri)=>{
-    const ptAuto = r.puntos_auto??'—';
-    const ptTexto = r.puntos_texto??'—';
-    const ptTotal = r.puntos_total??'—';
-    const ptMax = r.puntos_maximo??'—';
-    const pct = (r.puntos_maximo&&r.puntos_total!=null) ? Math.round(r.puntos_total/r.puntos_maximo*100)+'%' : '—';
-    const pendiente = r.texto_revisado===false && (r.detalle_notas||[]).some(d=>d.pendiente);
-    const estado = r.texto_revisado ? '✓ Revisado' : (pendiente?'⏳ Pendiente':'✓ Auto');
-    const bgRow = ri%2?'#F5F5F5':'#fff';
-    const bgTotal = r.puntos_total!=null ? (r.puntos_total/r.puntos_maximo>=0.7?'#E8F5E9':r.puntos_total/r.puntos_maximo>=0.5?'#FFF8DC':'#FFEBEE') : bgRow;
+    const ptAuto=r.puntos_auto??'—'; const ptTexto=r.puntos_texto??'—';
+    const ptTotal=r.puntos_total??'—'; const ptMax=r.puntos_maximo??'—';
+    const pct=(r.puntos_maximo&&r.puntos_total!=null)?Math.round(r.puntos_total/r.puntos_maximo*100)+'%':'—';
+    const pendiente=r.texto_revisado===false&&(r.detalle_notas||[]).some(d=>d.pendiente);
+    const estado=r.texto_revisado?'✓ Revisado':(pendiente?'⏳ Pendiente':'✓ Auto');
+    const bgRow=ri%2?'#F5F5F5':'#fff';
+    const bgTotal=r.puntos_total!=null?(r.puntos_total/r.puntos_maximo>=0.7?'#E8F5E9':r.puntos_total/r.puntos_maximo>=0.5?'#FFF8DC':'#FFEBEE'):bgRow;
     html+=`<tr style="background:${bgRow}">
-      <td style="padding:7px;font-weight:700">
-        ${esc(r.nombre)}
+      <td style="padding:7px;font-weight:700">${esc(r.nombre)}
         ${pendiente?`<button class="btn btn-xs" style="background:#FFF3E0;color:#E65100;border:none;cursor:pointer;border-radius:4px;font-size:11px;margin-left:4px" onclick="revisarTexto('${r.id}')">Revisar</button>`:''}
       </td>
       <td style="padding:7px;text-align:center">${r.numero_orden}</td>
@@ -1020,16 +1094,11 @@ function renderAdminResp(){
   document.getElementById('main-content').innerHTML=html;
 }
 
-
-// ── REVISAR TEXTO (manual grading) ────────────────────────────
 async function revisarTexto(respId){
-  const resp = S.respuestas.find(r=>r.id===respId);
-  if(!resp) return;
-  const ex = S.adminExamen;
-  const qs = ex.preguntas||[];
-  const pendientes = (resp.detalle_notas||[]).filter(d=>d.pendiente);
-
-  let html = `<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;overflow-y:auto;padding:20px">
+  const resp=S.respuestas.find(r=>r.id===respId); if(!resp) return;
+  const ex=S.adminExamen; const qs=ex.preguntas||[];
+  const pendientes=(resp.detalle_notas||[]).filter(d=>d.pendiente);
+  let html=`<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;overflow-y:auto;padding:20px">
     <div style="max-width:680px;margin:0 auto;background:#fff;border-radius:12px;padding:24px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <h2 style="margin:0;color:#1B3A6B">Revisar respuestas de texto</h2>
@@ -1037,186 +1106,129 @@ async function revisarTexto(respId){
       </div>
       <div style="background:#EEF4FB;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">
         <strong>${esc(resp.nombre)}</strong> · ${esc(resp.grado)} ${esc(resp.seccion)} · Orden ${resp.numero_orden}<br>
-        Puntos auto: <strong>${resp.puntos_auto??0}</strong> · Puntos texto: <strong style="color:#E65100">pendiente</strong> · Maximo: <strong>${resp.puntos_maximo}</strong>
+        Auto: <strong>${resp.puntos_auto??0}</strong> · Texto: <strong style="color:#E65100">pendiente</strong> · Máximo: <strong>${resp.puntos_maximo}</strong>
       </div>`;
-
   pendientes.forEach(d=>{
-    const q = qs[d.qi];
-    const respTxt = resp.respuestas[d.qi]||'';
-    html += `<div style="border:1px solid #E0E0E0;border-radius:10px;padding:14px;margin-bottom:12px">
+    const q=qs[d.qi]; const respTxt=resp.respuestas[d.qi]||'';
+    html+=`<div style="border:1px solid #E0E0E0;border-radius:10px;padding:14px;margin-bottom:12px">
       <div style="font-size:12px;color:#555;margin-bottom:4px">Pregunta ${d.qi+1} · ${q.puntos} pts</div>
       <div style="font-weight:700;font-size:14px;margin-bottom:10px">${esc(q.texto)}</div>
       <div style="background:#F5F5F5;border-radius:8px;padding:10px;font-size:14px;margin-bottom:10px;min-height:60px">${esc(respTxt)||'<em style="color:#aaa">Sin respuesta</em>'}</div>
-      ${q.rubrica?`<div style="background:#FFF8DC;border-radius:6px;padding:8px 10px;font-size:12px;color:#7B5800;margin-bottom:10px"><strong>Rubrica:</strong> ${esc(q.rubrica)}</div>`:''}
+      ${q.rubrica?`<div style="background:#FFF8DC;border-radius:6px;padding:8px 10px;font-size:12px;color:#7B5800;margin-bottom:10px"><strong>Rúbrica:</strong> ${esc(q.rubrica)}</div>`:''}
       <div style="display:flex;align-items:center;gap:10px">
         <label style="font-size:13px;font-weight:700;color:#555;white-space:nowrap">Puntos (max ${q.puntos}):</label>
         <input type="number" id="pts_${d.qi}" min="0" max="${q.puntos}" value="0" style="width:70px;font-size:15px;font-weight:700">
         <div style="display:flex;gap:5px">
-          ${[0, Math.round(q.puntos*0.25), Math.round(q.puntos*0.5), Math.round(q.puntos*0.75), q.puntos].map(v=>
-            `<button class="btn btn-xs btn-gray" onclick="document.getElementById('pts_${d.qi}').value=${v}">${v}</button>`
-          ).join('')}
+          ${[0,Math.round(q.puntos*0.25),Math.round(q.puntos*0.5),Math.round(q.puntos*0.75),q.puntos].map(v=>`<button class="btn btn-xs btn-gray" onclick="document.getElementById('pts_${d.qi}').value=${v}">${v}</button>`).join('')}
         </div>
       </div>
     </div>`;
   });
-
-  html += `<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+  html+=`<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
       <div id="revision-error" style="display:none;background:#FFEBEE;color:#B71C1C;border-radius:8px;padding:8px 12px;font-size:13px;flex:1"></div>
       <button class="btn btn-outline" onclick="cerrarRevision()">Cancelar</button>
       <button class="btn btn-primary" onclick="guardarRevision('${respId}',${JSON.stringify(pendientes.map(d=>d.qi))})">Guardar notas</button>
-    </div>
-  </div></div>`;
-
-  const overlay = document.createElement('div');
-  overlay.id='revision-overlay';
-  overlay.innerHTML=html;
+    </div></div></div>`;
+  const overlay=document.createElement('div'); overlay.id='revision-overlay'; overlay.innerHTML=html;
   document.body.appendChild(overlay);
 }
-
-function cerrarRevision(){
-  const el=document.getElementById('revision-overlay');
-  if(el) el.remove();
-}
-
-async function guardarRevision(respId, qIndices){
-  // Button feedback
-  const btn = document.querySelector('#revision-overlay .btn-primary');
-  if(btn){ btn.disabled=true; btn.textContent='Guardando...'; }
-
+function cerrarRevision(){const el=document.getElementById('revision-overlay');if(el)el.remove();}
+async function guardarRevision(respId,qIndices){
+  const btn=document.querySelector('#revision-overlay .btn-primary');
+  if(btn){btn.disabled=true;btn.textContent='Guardando...';}
   let ptsTxt=0;
-  const resp = S.respuestas.find(r=>r.id===respId);
-  if(!resp){ toast('Error: respuesta no encontrada',4000); return; }
-
-  const detalle = JSON.parse(JSON.stringify(resp.detalle_notas||[]));
+  const resp=S.respuestas.find(r=>r.id===respId);
+  if(!resp){toast('Error: respuesta no encontrada',4000);return;}
+  const detalle=JSON.parse(JSON.stringify(resp.detalle_notas||[]));
   qIndices.forEach(qi=>{
-    const input = document.getElementById('pts_'+qi);
-    const val = input ? (parseInt(input.value)||0) : 0;
-    ptsTxt += val;
-    const item = detalle.find(d=>d.qi===qi);
-    if(item){ item.pts=val; item.pendiente=false; }
-    else { detalle.push({qi, pts:val, pendiente:false, auto:false}); }
+    const input=document.getElementById('pts_'+qi);
+    const val=input?(parseInt(input.value)||0):0; ptsTxt+=val;
+    const item=detalle.find(d=>d.qi===qi);
+    if(item){item.pts=val;item.pendiente=false;}
+    else{detalle.push({qi,pts:val,pendiente:false,auto:false});}
   });
-
-  const ptTotal = (resp.puntos_auto||0) + ptsTxt;
-
-  const {error} = await rpcAdmin('admin_guardar_nota',{
-    p_resp_id:   respId,
-    p_pts_texto: ptsTxt,
-    p_pts_total: ptTotal,
-    p_detalle:   detalle
-  });
-
+  const ptTotal=(resp.puntos_auto||0)+ptsTxt;
+  const {error}=await rpcAdmin('admin_guardar_nota',{p_resp_id:respId,p_pts_texto:ptsTxt,p_pts_total:ptTotal,p_detalle:detalle});
   if(error){
-    console.error('RPC error:', error);
-    if(btn){ btn.disabled=false; btn.textContent='Guardar notas'; }
-    const errDiv = document.getElementById('revision-error');
-    if(errDiv){ errDiv.style.display='block'; errDiv.textContent='Error: '+error.message; }
-    toast('Error al guardar',4000);
-    return;
+    if(btn){btn.disabled=false;btn.textContent='Guardar notas';}
+    const errDiv=document.getElementById('revision-error');
+    if(errDiv){errDiv.style.display='block';errDiv.textContent='Error: '+error.message;}
+    toast('Error al guardar',4000); return;
   }
-
-  cerrarRevision();
-  toast('Nota guardada: '+ptTotal+'/'+resp.puntos_maximo+' pts');
+  cerrarRevision(); toast('Nota guardada: '+ptTotal+'/'+resp.puntos_maximo+' pts');
   await verRespuestas(S.adminExamen.id);
 }
 
 function descargarExcel(){
   const ex=S.adminExamen; const qs=ex.preguntas||[]; const resps=S.respuestas;
   const wb=XLSX.utils.book_new();
-  // Respuestas
   const h1=['Nombre','Orden','Seccion','Grado','Pts Auto','Pts Texto','Pts Total','Maximo','%','Revisado','Tiempo(seg)','Enviado'];
   qs.forEach((q,i)=>h1.push('P'+(i+1)+' ['+q.tipo+']('+q.puntos+'pts): '+(q.texto||'').substring(0,35)));
   const rows=[h1];
   resps.forEach(r=>{
     const pct=(r.puntos_maximo&&r.puntos_total!=null)?Math.round(r.puntos_total/r.puntos_maximo*100)+'%':'—';
-    const row=[r.nombre,r.numero_orden,r.seccion,r.grado,
-      r.puntos_auto??'—',r.puntos_texto??'—',r.puntos_total??'—',r.puntos_maximo??'—',pct,
-      r.texto_revisado?'Si':'Pendiente',r.tiempo_usado_seg||0,(r.submitted_at||'').substring(0,16)];
-    qs.forEach((_,qi)=>{ const v=r.respuestas[qi]; row.push(v===undefined?'':(typeof v==='object'?JSON.stringify(v):String(v))); });
+    const row=[r.nombre,r.numero_orden,r.seccion,r.grado,r.puntos_auto??'—',r.puntos_texto??'—',r.puntos_total??'—',r.puntos_maximo??'—',pct,r.texto_revisado?'Si':'Pendiente',r.tiempo_usado_seg||0,(r.submitted_at||'').substring(0,16)];
+    qs.forEach((_,qi)=>{const v=r.respuestas[qi];row.push(v===undefined?'':(typeof v==='object'?JSON.stringify(v):String(v)));});
     rows.push(row);
   });
-  const ws1=XLSX.utils.aoa_to_sheet(rows);
-  ws1['!cols']=h1.map((_,i)=>({wch:i<6?16:45}));
+  const ws1=XLSX.utils.aoa_to_sheet(rows); ws1['!cols']=h1.map((_,i)=>({wch:i<6?16:45}));
   XLSX.utils.book_append_sheet(wb,ws1,'Respuestas');
-  // Rubrica
   const h2=['#','Tipo','Pregunta','Puntos','Criterios'];
   const rub=[h2,...qs.map((q,i)=>[i+1,q.tipo,q.texto||'',q.puntos||0,q.rubrica||(q.tipo==='vf'?'Correcta: '+q.correcta:q.tipo==='multiple'?'Correcta: '+q.correcta:'—')])];
-  if(ex.rubrica_txt) rub.push(['','','Rubrica general:','',ex.rubrica_txt]);
-  const ws2=XLSX.utils.aoa_to_sheet(rub);
-  ws2['!cols']=[{wch:4},{wch:14},{wch:50},{wch:8},{wch:60}];
+  if(ex.rubrica_txt) rub.push(['','','Rúbrica general:','',ex.rubrica_txt]);
+  const ws2=XLSX.utils.aoa_to_sheet(rub); ws2['!cols']=[{wch:4},{wch:14},{wch:50},{wch:8},{wch:60}];
   XLSX.utils.book_append_sheet(wb,ws2,'Rubrica');
-  const fecha=new Date().toISOString().substring(0,10);
-  XLSX.writeFile(wb,ex.titulo+'_'+ex.grado+'_P'+ex.periodo+'_'+fecha+'.xlsx');
+  XLSX.writeFile(wb,ex.titulo+'_'+ex.grado+'_P'+ex.periodo+'_'+new Date().toISOString().substring(0,10)+'.xlsx');
   toast('Excel descargado');
 }
 
 async function archivarRespuestas(){
-  if(!confirm('Archivar las '+S.respuestas.length+' respuestas y borrarlas de la vista activa? Quedan guardadas en el historial.')) return;
-  const ex=S.adminExamen;
-  // Copy to archive
-  const archivos=S.respuestas.map(r=>({
-    original_id:r.id, examen_id:r.examen_id,
-    examen_titulo:ex.titulo, examen_grado:ex.grado, examen_periodo:ex.periodo,
-    nombre:r.nombre, numero_orden:r.numero_orden, grado:r.grado, seccion:r.seccion,
-    respuestas:r.respuestas, tiempo_usado_seg:r.tiempo_usado_seg, submitted_at:r.submitted_at
-  }));
-  const ids=S.respuestas.map(r=>r.id);
-  const {error:e1} = await rpcAdmin('admin_archivar_respuestas',{
-    p_examen_id: ex.id,
-    p_resp_ids:  ids
-  });
+  if(!confirm('Archivar las '+S.respuestas.length+' respuestas y borrarlas de la vista activa?')) return;
+  const ex=S.adminExamen; const ids=S.respuestas.map(r=>r.id);
+  const {error:e1}=await rpcAdmin('admin_archivar_respuestas',{p_examen_id:ex.id,p_resp_ids:ids});
   if(e1){toast('Error al archivar: '+e1.message,4000);return;}
-  toast(archivos.length+' respuestas archivadas');
-  S.view='admin'; S.adminTab='examenes'; renderAdmin();
+  toast(ids.length+' respuestas archivadas'); S.view='admin'; S.adminTab='examenes'; renderAdmin();
 }
 
 // ── CREAR / EDITAR EXAMEN ─────────────────────────────────────
 function renderAdminCrear(){
-  const ex=S.adminExamen;
-  const GRADOS=['2do','4to','5to','6to'];
-  const secs=ex?.secciones_activas||[];
+  const ex=S.adminExamen; const GRADOS=['2do','4to','5to','6to']; const secs=ex?.secciones_activas||[];
   let html=`<div class="card">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
       <button class="btn btn-outline btn-sm" onclick="S.view='admin';S.qBuilders=[];render()">&#8592; Volver</button>
       <h2 style="margin:0">${ex?'Editar examen':'Nuevo examen'}</h2>
     </div>
     <div class="form-sec">
-      <div class="form-sec-title">Informacion general</div>
-      <label for="f-titulo">Titulo del examen</label>
-      <input type="text" id="f-titulo" value="${esc(ex?.titulo||'')}" placeholder="Ej: Examen P3 — Codigo Etico Tecnologico">
+      <div class="form-sec-title">Información general</div>
+      <label>Título del examen</label>
+      <input type="text" id="f-titulo" value="${esc(ex?.titulo||'')}" placeholder="Ej: S1 — El Espejo del Bien Común">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-        <div><label>Grado</label>
-          <select id="f-grado">${GRADOS.map(g=>`<option ${ex?.grado===g?'selected':''}>${g}</option>`).join('')}</select></div>
-        <div><label>Periodo</label>
-          <select id="f-periodo">${[1,2,3,4].map(p=>`<option ${ex?.periodo===p?'selected':''}>${p}</option>`).join('')}</select></div>
-        <div><label>Tiempo (min)</label>
-          <input type="number" id="f-tiempo" value="${ex?.tiempo_minutos||0}" min="0" max="180"></div>
+        <div><label>Grado</label><select id="f-grado">${GRADOS.map(g=>`<option ${ex?.grado===g?'selected':''}>${g}</option>`).join('')}</select></div>
+        <div><label>Período</label><select id="f-periodo">${[1,2,3,4].map(p=>`<option ${ex?.periodo===p?'selected':''}>${p}</option>`).join('')}</select></div>
+        <div><label>Tiempo (min)</label><input type="number" id="f-tiempo" value="${ex?.tiempo_minutos||0}" min="0" max="180"></div>
       </div>
-      <label for="f-desc">Descripcion</label>
-      <input type="text" id="f-desc" value="${esc(ex?.descripcion||'')}">
-      <label for="f-instr">Instrucciones para el estudiante</label>
-      <textarea id="f-instr">${esc(ex?.instrucciones||'')}</textarea>
-      <label for="f-rubrica">Rubrica general (para el docente / analisis IA)</label>
-      <textarea id="f-rubrica" rows="2">${esc(ex?.rubrica_txt||'')}</textarea>
+      <label>Descripción</label><input type="text" id="f-desc" value="${esc(ex?.descripcion||'')}">
+      <label>Instrucciones para el estudiante</label><textarea id="f-instr">${esc(ex?.instrucciones||'')}</textarea>
+      <label>Rúbrica general (uso del docente)</label><textarea id="f-rubrica" rows="2">${esc(ex?.rubrica_txt||'')}</textarea>
     </div>
     <div class="form-sec">
       <div class="form-sec-title">Control de acceso</div>
-      <label>Secciones autorizadas (deja vacio = todas)</label>
+      <label>Secciones autorizadas (vacío = todas)</label>
       <div class="sec-chips" id="sec-chips">
         ${SECCIONES.map(s=>`<div class="sec-chip${secs.includes(s)?' active':''}" id="chip_${s}" onclick="toggleChip('${s}')">${s}</div>`).join('')}
       </div>
       <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
         <input type="checkbox" id="f-validar" ${ex?.validar_lista?'checked':''} style="width:auto">
-        <label style="margin:0;font-size:14px">Verificar estudiantes contra la lista del curso</label>
+        <label style="margin:0;font-size:14px">Verificar contra la lista del curso</label>
       </div>
     </div>
     <div class="form-sec">
       <div class="form-sec-title">Preguntas</div>
       <div id="q-list"></div>
       <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
-        <button class="btn btn-outline btn-sm" onclick="addQ('multiple')">+ Opcion multiple</button>
+        <button class="btn btn-outline btn-sm" onclick="addQ('multiple')">+ Múltiple</button>
         <button class="btn btn-outline btn-sm" onclick="addQ('texto')">+ Texto libre</button>
-        <button class="btn btn-outline btn-sm" onclick="addQ('vf')">+ Verdadero/Falso</button>
+        <button class="btn btn-outline btn-sm" onclick="addQ('vf')">+ V/F</button>
         <button class="btn btn-outline btn-sm" onclick="addQ('completar')">+ Completar</button>
         <button class="btn btn-outline btn-sm" onclick="addQ('ordenar')">+ Ordenar</button>
         <button class="btn btn-outline btn-sm" onclick="addQ('escala')">+ Escala 1-5</button>
@@ -1231,22 +1243,15 @@ function renderAdminCrear(){
   renderQBuilders();
 }
 
-let _secActivas=[];
-function toggleChip(s){
-  const chip=document.getElementById('chip_'+s);
-  if(chip.classList.contains('active')){chip.classList.remove('active');}
-  else{chip.classList.add('active');}
-}
-function getSecsActivas(){
-  return SECCIONES.filter(s=>{const c=document.getElementById('chip_'+s);return c&&c.classList.contains('active');});
-}
+function toggleChip(s){const chip=document.getElementById('chip_'+s);if(chip.classList.contains('active')){chip.classList.remove('active');}else{chip.classList.add('active');}}
+function getSecsActivas(){return SECCIONES.filter(s=>{const c=document.getElementById('chip_'+s);return c&&c.classList.contains('active');});}
 
 function addQ(tipo){
   const defaults={
     multiple:{tipo:'multiple',texto:'',opciones:['','','',''],correcta:'A',puntos:5},
     texto:{tipo:'texto',texto:'',puntos:10,rubrica:''},
     vf:{tipo:'vf',texto:'',correcta:'V',puntos:5},
-    completar:{tipo:'completar',texto:'La vida de Jesus es ___ y su mision fue ___',puntos:10},
+    completar:{tipo:'completar',texto:'La vida de Jesús es ___ y su misión fue ___',puntos:10},
     ordenar:{tipo:'ordenar',texto:'Ordena los siguientes elementos:',items:['Elemento 1','Elemento 2','Elemento 3'],puntos:10},
     escala:{tipo:'escala',texto:'',etiquetas:['Nada','Poco','Regular','Bastante','Mucho'],puntos:5}
   };
@@ -1254,119 +1259,46 @@ function addQ(tipo){
 }
 
 function renderQBuilders(){
-  const el=document.getElementById('q-list');
-  if(!el) return;
-  const TN={multiple:'Opcion multiple',texto:'Texto libre',vf:'Verdadero/Falso',completar:'Completar la frase',ordenar:'Ordenar elementos',escala:'Escala 1-5'};
+  const el=document.getElementById('q-list'); if(!el) return;
+  const TN={multiple:'Opción múltiple',texto:'Texto libre',vf:'Verdadero/Falso',completar:'Completar la frase',ordenar:'Ordenar elementos',escala:'Escala 1-5'};
   el.innerHTML=S.qBuilders.map((q,i)=>{
     let extra='';
-    if(q.tipo==='multiple'){
-      extra='<div style="margin-top:8px">'+['A','B','C','D'].map((L,oi)=>`
-        <div style="display:flex;gap:6px;margin-bottom:4px;align-items:center">
-          <span style="width:20px;font-weight:700;font-size:13px">${L}</span>
-          <input type="text" value="${esc((q.opciones||[])[oi]||'')}" placeholder="Opcion ${L}" oninput="S.qBuilders[${i}].opciones[${oi}]=this.value" style="flex:1;font-size:13px">
-          <input type="radio" name="cor_${i}" ${q.correcta===L?'checked':''} onchange="S.qBuilders[${i}].correcta='${L}'" title="Correcta">
-        </div>`).join('')+'<small style="color:var(--sub)">El circulo marca la opcion correcta</small></div>';
-    } else if(q.tipo==='vf'){
-      extra=`<div style="margin-top:8px;display:flex;gap:12px;align-items:center">
-        <span style="font-size:12px;color:var(--sub)">Correcta:</span>
-        <label><input type="radio" name="vf_${i}" ${q.correcta==='V'?'checked':''} onchange="S.qBuilders[${i}].correcta='V'"> Verdadero</label>
-        <label><input type="radio" name="vf_${i}" ${q.correcta==='F'?'checked':''} onchange="S.qBuilders[${i}].correcta='F'"> Falso</label>
-      </div>`;
-    } else if(q.tipo==='ordenar'){
-      extra=`<div style="margin-top:6px"><label style="font-size:12px">Items (uno por linea — el orden que escribas es el CORRECTO):</label>
-        <textarea rows="4" style="font-size:13px" oninput="S.qBuilders[${i}].items=this.value.split('\\n').filter(s=>s.trim())">${esc((q.items||[]).join('\n'))}</textarea></div>`;
-    } else if(q.tipo==='completar'){
-      const respArr=(q.respuestas||[]).join('\n');
-      extra=`<small style="color:var(--sub);display:block;margin-top:4px">Usa ___ para los espacios en blanco.</small>
-        <div style="margin-top:6px"><label style="font-size:12px;color:#1B5E20;font-weight:700">Respuestas correctas (una por linea, en orden):</label>
-        <textarea rows="3" style="font-size:12px;color:#1B5E20;border-color:#A5D6A7" placeholder="autonomia&#10;beneficencia&#10;no maleficencia" oninput="S.qBuilders[${i}].respuestas=this.value.split('\\n').filter(s=>s.trim())">${esc(respArr)}</textarea>
-        <small style="color:#1B5E20">Deja vacio si no hay respuesta exacta. Acepta variaciones de tildes.</small></div>`;
-    } else if(q.tipo==='texto'){
-      extra=`<div style="margin-top:6px"><label style="font-size:12px">Criterios de evaluacion (rubrica):</label>
-        <textarea rows="2" style="font-size:13px" placeholder="Excelente: ... Satisfactorio: ..." oninput="S.qBuilders[${i}].rubrica=this.value">${esc(q.rubrica||'')}</textarea></div>`;
-    } else if(q.tipo==='escala'){
-      extra=`<div style="margin-top:6px"><label style="font-size:12px">Etiquetas 1-5 (separadas por coma):</label>
-        <input type="text" style="font-size:13px" value="${esc((q.etiquetas||[]).join(','))}" placeholder="Nada,Poco,Regular,Bastante,Mucho" oninput="S.qBuilders[${i}].etiquetas=this.value.split(',').map(s=>s.trim())"></div>`;
-    }
-    return `<div class="q-builder">
-      <span class="q-type-pill">${TN[q.tipo]}</span>
-      <button class="remove-q" onclick="S.qBuilders.splice(${i},1);renderQBuilders()">Quitar</button>
-      <label style="font-size:12px">Pregunta ${i+1}</label>
-      <textarea rows="2" style="font-size:13px" oninput="S.qBuilders[${i}].texto=this.value">${esc(q.texto||'')}</textarea>
-      <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
-        <label style="font-size:12px;margin:0;flex-shrink:0">Puntos:</label>
-        <input type="number" value="${q.puntos||5}" min="1" max="100" style="width:65px;font-size:13px" oninput="S.qBuilders[${i}].puntos=parseInt(this.value)||5">
-      </div>${extra}
-    </div>`;
+    if(q.tipo==='multiple'){extra='<div style="margin-top:8px">'+['A','B','C','D'].map((L,oi)=>`<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center"><span style="width:20px;font-weight:700;font-size:13px">${L}</span><input type="text" value="${esc((q.opciones||[])[oi]||'')}" placeholder="Opción ${L}" oninput="S.qBuilders[${i}].opciones[${oi}]=this.value" style="flex:1;font-size:13px"><input type="radio" name="cor_${i}" ${q.correcta===L?'checked':''} onchange="S.qBuilders[${i}].correcta='${L}'" title="Correcta"></div>`).join('')+'<small style="color:var(--sub)">El círculo marca la opción correcta</small></div>';}
+    else if(q.tipo==='vf'){extra=`<div style="margin-top:8px;display:flex;gap:12px;align-items:center"><span style="font-size:12px;color:var(--sub)">Correcta:</span><label><input type="radio" name="vf_${i}" ${q.correcta==='V'?'checked':''} onchange="S.qBuilders[${i}].correcta='V'"> Verdadero</label><label><input type="radio" name="vf_${i}" ${q.correcta==='F'?'checked':''} onchange="S.qBuilders[${i}].correcta='F'"> Falso</label></div>`;}
+    else if(q.tipo==='ordenar'){extra=`<div style="margin-top:6px"><label style="font-size:12px">Items (uno por línea — el orden que escribas es el CORRECTO):</label><textarea rows="4" style="font-size:13px" oninput="S.qBuilders[${i}].items=this.value.split('\\n').filter(s=>s.trim())">${esc((q.items||[]).join('\n'))}</textarea></div>`;}
+    else if(q.tipo==='completar'){const respArr=(q.respuestas||[]).join('\n');extra=`<small style="color:var(--sub);display:block;margin-top:4px">Usa ___ para los espacios en blanco.</small><div style="margin-top:6px"><label style="font-size:12px;color:#1B5E20;font-weight:700">Respuestas correctas (una por línea):</label><textarea rows="3" style="font-size:12px;color:#1B5E20;border-color:#A5D6A7" oninput="S.qBuilders[${i}].respuestas=this.value.split('\\n').filter(s=>s.trim())">${esc(respArr)}</textarea></div>`;}
+    else if(q.tipo==='texto'){extra=`<div style="margin-top:6px"><label style="font-size:12px">Criterios de evaluación (rúbrica):</label><textarea rows="2" style="font-size:13px" oninput="S.qBuilders[${i}].rubrica=this.value">${esc(q.rubrica||'')}</textarea></div>`;}
+    else if(q.tipo==='escala'){extra=`<div style="margin-top:6px"><label style="font-size:12px">Etiquetas 1-5 (separadas por coma):</label><input type="text" style="font-size:13px" value="${esc((q.etiquetas||[]).join(','))}" oninput="S.qBuilders[${i}].etiquetas=this.value.split(',').map(s=>s.trim())"></div>`;}
+    return `<div class="q-builder"><span class="q-type-pill">${TN[q.tipo]}</span><button class="remove-q" onclick="S.qBuilders.splice(${i},1);renderQBuilders()">Quitar</button><label style="font-size:12px">Pregunta ${i+1}</label><textarea rows="2" style="font-size:13px" oninput="S.qBuilders[${i}].texto=this.value">${esc(q.texto||'')}</textarea><div style="display:flex;gap:8px;align-items:center;margin-top:4px"><label style="font-size:12px;margin:0;flex-shrink:0">Puntos:</label><input type="number" value="${q.puntos||5}" min="1" max="100" style="width:65px;font-size:13px" oninput="S.qBuilders[${i}].puntos=parseInt(this.value)||5"></div>${extra}</div>`;
   }).join('');
 }
 
 async function guardarExamen(){
   const titulo=document.getElementById('f-titulo').value.trim();
-  if(!titulo){toast('Escribe un titulo');return;}
+  if(!titulo){toast('Escribe un título');return;}
   if(S.qBuilders.length===0){toast('Agrega al menos una pregunta');return;}
-  const payload={
-    titulo,
-    grado:document.getElementById('f-grado').value,
-    periodo:parseInt(document.getElementById('f-periodo').value)||1,
-    tiempo_minutos:parseInt(document.getElementById('f-tiempo').value)||0,
-    descripcion:document.getElementById('f-desc').value.trim(),
-    instrucciones:document.getElementById('f-instr').value.trim(),
-    rubrica_txt:document.getElementById('f-rubrica').value.trim(),
-    preguntas:[...S.qBuilders],
-    secciones_activas:getSecsActivas(),
-    validar_lista:document.getElementById('f-validar').checked,
-    updated_at:new Date().toISOString()
-  };
-  const {error} = await rpcAdmin('admin_upsert_examen',{
-    p_id: S.adminExamen ? S.adminExamen.id : null,
-    p_datos: payload
-  });
+  const payload={titulo,grado:document.getElementById('f-grado').value,periodo:parseInt(document.getElementById('f-periodo').value)||1,tiempo_minutos:parseInt(document.getElementById('f-tiempo').value)||0,descripcion:document.getElementById('f-desc').value.trim(),instrucciones:document.getElementById('f-instr').value.trim(),rubrica_txt:document.getElementById('f-rubrica').value.trim(),preguntas:[...S.qBuilders],secciones_activas:getSecsActivas(),validar_lista:document.getElementById('f-validar').checked,updated_at:new Date().toISOString()};
+  const {error}=await rpcAdmin('admin_upsert_examen',{p_id:S.adminExamen?S.adminExamen.id:null,p_datos:payload});
   if(error){toast('Error: '+error.message,4000);return;}
-  S.qBuilders=[];
-  toast(S.adminExamen?'Examen actualizado':'Examen creado');
+  S.qBuilders=[]; toast(S.adminExamen?'Examen actualizado':'Examen creado');
   S.adminExamen=null; S.view='admin'; renderAdmin();
 }
 
-
-
-// ── RPC ADMIN HELPER ──────────────────────────────────────────
-async function rpcAdmin(fn, params){
-  const {data, error} = await sb.rpc(fn, {p_pin_hash: S.pinHash, ...params});
+async function rpcAdmin(fn,params){
+  const {data,error}=await sb.rpc(fn,{p_pin_hash:S.pinHash,...params});
   if(error) return {error};
-  if(data && data.error) return {error: {message: data.error}};
+  if(data&&data.error) return {error:{message:data.error}};
   return {data};
 }
-// ── IMPORT JSON ────────────────────────────────────────────────
-function mostrarImportJSON(){
-  const a=document.getElementById('import-json-area');
-  if(a) a.style.display=a.style.display==='none'?'block':'none';
-}
+
+function mostrarImportJSON(){const a=document.getElementById('import-json-area');if(a)a.style.display=a.style.display==='none'?'block':'none';}
 async function procesarImportJSON(){
   const txt=document.getElementById('json-input').value.trim();
   if(!txt){toast('Pega el JSON del examen');return;}
-  let data;
-  try{ data=JSON.parse(txt); }
-  catch(e){ toast('JSON invalido: '+e.message,4000); return; }
-  if(!data.titulo||!Array.isArray(data.preguntas)){toast('El JSON no tiene el formato correcto (titulo + preguntas)');return;}
-  const payload={
-    titulo:data.titulo,
-    descripcion:data.descripcion||'',
-    grado:data.grado||'',
-    periodo:parseInt(data.periodo)||0,
-    tiempo_minutos:parseInt(data.tiempo_minutos)||0,
-    instrucciones:data.instrucciones||'',
-    rubrica_txt:data.rubrica_txt||'',
-    preguntas:data.preguntas,
-    secciones_activas:data.secciones_activas||[],
-    validar_lista:data.validar_lista||false,
-    activo:false,
-    updated_at:new Date().toISOString()
-  };
-  const {error}=await rpcAdmin('admin_upsert_examen',{
-    p_id: null,
-    p_datos: payload
-  });
+  let data; try{data=JSON.parse(txt);}catch(e){toast('JSON inválido: '+e.message,4000);return;}
+  if(!data.titulo||!Array.isArray(data.preguntas)){toast('El JSON necesita titulo + preguntas');return;}
+  const payload={titulo:data.titulo,descripcion:data.descripcion||'',grado:data.grado||'',periodo:parseInt(data.periodo)||0,tiempo_minutos:parseInt(data.tiempo_minutos)||0,instrucciones:data.instrucciones||'',rubrica_txt:data.rubrica_txt||'',preguntas:data.preguntas,secciones_activas:data.secciones_activas||[],validar_lista:data.validar_lista||false,activo:false,updated_at:new Date().toISOString()};
+  const {error}=await rpcAdmin('admin_upsert_examen',{p_id:null,p_datos:payload});
   if(error){toast('Error al importar: '+error.message,4000);return;}
   toast('Examen importado: '+data.titulo);
   document.getElementById('import-json-area').style.display='none';
@@ -1374,85 +1306,38 @@ async function procesarImportJSON(){
   S.adminTab='examenes'; renderAdmin();
 }
 
-// ── EXPORT WORD ────────────────────────────────────────────────
 function exportarWord(){
-  const ex=S.adminExamen;
-  const qs=ex.preguntas||[];
-  const TIPO_LABEL={multiple:'Opcion multiple',texto:'Respuesta abierta',vf:'Verdadero / Falso',completar:'Completar la frase',ordenar:'Ordenar elementos',escala:'Escala 1-5'};
-  const LETRAS=['A','B','C','D'];
-  let doc='';
-  // Header
-  doc+='EXAMEN\n';
-  doc+=ex.titulo+'\n';
-  doc+=ex.grado+' | Periodo '+ex.periodo+(ex.tiempo_minutos>0?' | Tiempo: '+ex.tiempo_minutos+' min':'')+'\n';
-  doc+='\n';
-  // Student info
-  doc+='Nombre: _________________________________________________\n';
-  doc+='Numero de orden: _____ Seccion: _____ Grado: _____\n';
-  doc+='Fecha: ___________________\n';
-  doc+='\n';
-  if(ex.instrucciones){
-    doc+='INSTRUCCIONES: '+ex.instrucciones+'\n\n';
-  }
+  const ex=S.adminExamen; const qs=ex.preguntas||[];
+  const TIPO_LABEL={multiple:'Opción múltiple',texto:'Respuesta abierta',vf:'Verdadero / Falso',completar:'Completar la frase',ordenar:'Ordenar elementos',escala:'Escala 1-5'};
+  const LETRAS=['A','B','C','D']; let doc='';
+  doc+='EXAMEN\n'+ex.titulo+'\n'+ex.grado+' | Período '+ex.periodo+(ex.tiempo_minutos>0?' | Tiempo: '+ex.tiempo_minutos+' min':'')+'\n\n';
+  doc+='Nombre: _________________________________________________\nNúmero de orden: _____ Sección: _____ Grado: _____\nFecha: ___________________\n\n';
+  if(ex.instrucciones) doc+='INSTRUCCIONES: '+ex.instrucciones+'\n\n';
   doc+='='.repeat(60)+'\n\n';
-  // Questions
   let totalPts=0;
   qs.forEach((q,i)=>{
-    const pts=q.puntos||0;
-    totalPts+=pts;
-    doc+=(i+1)+'. ['+TIPO_LABEL[q.tipo]+' | '+pts+' pts]\n';
-    doc+=q.texto+'\n\n';
-    if(q.tipo==='multiple'){
-      (q.opciones||[]).forEach((op,oi)=>{
-        doc+='   ('+LETRAS[oi]+') '+op+'\n';
-      });
-      doc+='\n   Mi respuesta: ( )A  ( )B  ( )C  ( )D\n';
-    } else if(q.tipo==='vf'){
-      doc+='   ( ) Verdadero     ( ) Falso\n';
-    } else if(q.tipo==='completar'){
-      doc+='   [Completa los espacios en blanco en el texto]\n';
-    } else if(q.tipo==='ordenar'){
-      doc+='   Ordena los elementos del 1 al '+(q.items||[]).length+':\n';
-      (q.items||[]).forEach(it=>{ doc+='   ( ) '+it+'\n'; });
-    } else if(q.tipo==='escala'){
-      const lbs=q.etiquetas||['1','2','3','4','5'];
-      doc+='   Marca con X:\n';
-      doc+='   [ ] 1-'+lbs[0]+'  [ ] 2-'+lbs[1]+'  [ ] 3-'+lbs[2]+'  [ ] 4-'+lbs[3]+'  [ ] 5-'+lbs[4]+'\n';
-    } else if(q.tipo==='texto'){
-      doc+='   ________________________________________________________________\n';
-      doc+='   ________________________________________________________________\n';
-      doc+='   ________________________________________________________________\n';
-      doc+='   ________________________________________________________________\n';
-      doc+='   ________________________________________________________________\n';
-      doc+='   ________________________________________________________________\n';
-    }
+    const pts=q.puntos||0; totalPts+=pts;
+    doc+=(i+1)+'. ['+TIPO_LABEL[q.tipo]+' | '+pts+' pts]\n'+q.texto+'\n\n';
+    if(q.tipo==='multiple'){(q.opciones||[]).forEach((op,oi)=>{doc+='   ('+LETRAS[oi]+') '+op+'\n';});doc+='\n   Mi respuesta: ( )A  ( )B  ( )C  ( )D\n';}
+    else if(q.tipo==='vf'){doc+='   ( ) Verdadero     ( ) Falso\n';}
+    else if(q.tipo==='ordenar'){doc+='   Ordena del 1 al '+(q.items||[]).length+':\n';(q.items||[]).forEach(it=>{doc+='   ( ) '+it+'\n';});}
+    else if(q.tipo==='escala'){const lbs=q.etiquetas||['1','2','3','4','5'];doc+='   Marca con X:\n   [ ] 1-'+lbs[0]+'  [ ] 2-'+lbs[1]+'  [ ] 3-'+lbs[2]+'  [ ] 4-'+lbs[3]+'  [ ] 5-'+lbs[4]+'\n';}
+    else if(q.tipo==='texto'){doc+='   ________________________________________________________________\n'.repeat(6);}
     doc+='\n';
   });
-  doc+='='.repeat(60)+'\n';
-  doc+='TOTAL: '+totalPts+' puntos\n\n';
-  // Rubrica
+  doc+='='.repeat(60)+'\nTOTAL: '+totalPts+' puntos\n\n';
   if(ex.rubrica_txt||qs.some(q=>q.rubrica)){
-    doc+='RUBRICA (uso del docente)\n';
-    doc+='-'.repeat(40)+'\n';
+    doc+='RÚBRICA (uso del docente)\n'+'-'.repeat(40)+'\n';
     if(ex.rubrica_txt) doc+='General: '+ex.rubrica_txt+'\n\n';
-    qs.forEach((q,i)=>{
-      if(q.rubrica) doc+='P'+(i+1)+': '+q.rubrica+'\n';
-      else if(q.tipo==='multiple'||q.tipo==='vf') doc+='P'+(i+1)+': Respuesta correcta: '+q.correcta+'\n';
-    });
+    qs.forEach((q,i)=>{if(q.rubrica)doc+='P'+(i+1)+': '+q.rubrica+'\n';else if(q.tipo==='multiple'||q.tipo==='vf')doc+='P'+(i+1)+': Respuesta correcta: '+q.correcta+'\n';});
   }
-  // Download as .txt (opens in Word as plain text, fully editable)
   const blob=new Blob([doc],{type:'text/plain;charset=utf-8'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  const fecha=new Date().toISOString().substring(0,10);
-  a.download=ex.titulo+'_'+ex.grado+'_P'+ex.periodo+'_'+fecha+'.txt';
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('Documento descargado');
+  const a=document.createElement('a'); a.href=url;
+  a.download=ex.titulo+'_'+ex.grado+'_P'+ex.periodo+'_'+new Date().toISOString().substring(0,10)+'.txt';
+  a.click(); URL.revokeObjectURL(url); toast('Documento descargado');
 }
 
-// ── INIT ───────────────────────────────────────────────────────
 render();
 </script>
 </body>
