@@ -435,7 +435,7 @@ function renderAdminCrear() {
       <label>Secciones autorizadas (vacío = todas)</label>
       <div class="sec-chips" id="sec-chips">${SECCIONES.map(s=>`<div class="sec-chip${secs.includes(s)?' active':''}" id="chip_${s}" onclick="toggleChip('${s}')">${s}</div>`).join('')}</div>
       <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
-        <input type="checkbox" id="f-validar" ${ex?.validar_lista?'checked':''} style="width:auto">
+        <input type="checkbox" id="f-validar" ${ex ? (ex.validar_lista?'checked':'') : 'checked'} style="width:auto">
         <label style="margin:0;font-size:14px">Verificar contra la lista del curso</label>
       </div>
     </div>
