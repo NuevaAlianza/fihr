@@ -108,82 +108,205 @@ function renderRegistro() {
   var secs = ex.secciones_activas || [];
   var secOpts = (secs.length > 0 ? secs : SECCIONES)
     .map(s => `<option value="${s}">${s}</option>`).join('');
+
+  // Con validar_lista: el estudiante NO escribe su nombre — el sistema lo encuentra
+  // Sin validar_lista: campo de nombre manual como antes
+  var campoNombre = ex.validar_lista
+    ? '' // se inyecta dinámicamente después del lookup
+    : `<label for="r-nombre">Nombre completo *</label>
+       <div class="secure-area">
+         <input type="text" id="r-nombre" maxlength="80" placeholder="Escribe tu nombre completo" autocomplete="off">
+         <span class="secure-icon">sin pegar</span>
+       </div>`;
+
   document.getElementById('main-content').innerHTML = `
   <div class="card" style="max-width:500px;margin:0 auto">
     <h2>${esc(ex.titulo)}</h2>
     ${ex.descripcion ? `<div style="color:var(--sub);font-size:14px;margin-bottom:12px">${esc(ex.descripcion)}</div>` : ''}
     ${ex.instrucciones ? `<div class="info-box"><strong>Instrucciones:</strong> ${esc(ex.instrucciones)}</div>` : ''}
-    ${ex.validar_lista ? '<div class="warn-box">Tu nombre y número serán verificados contra la lista del curso. Escríbelo exactamente como aparece.</div>' : ''}
-    <label for="r-nombre">Nombre completo *</label>
-    <div class="secure-area">
-      <input type="text" id="r-nombre" maxlength="80" placeholder="Escribe tu nombre completo" autocomplete="off">
-      <span class="secure-icon">sin pegar</span>
-    </div>
+    ${ex.validar_lista
+      ? '<div class="info-box">Ingresa tu número de orden y sección — el sistema encontrará tu nombre automáticamente.</div>'
+      : ''}
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div>
         <label for="r-orden">Número de orden *</label>
-        <input type="number" id="r-orden" min="1" max="50" placeholder="Ej: 12">
+        <input type="number" id="r-orden" min="1" max="50" placeholder="Ej: 12"
+          oninput="buscarEstudiante()" onchange="buscarEstudiante()">
       </div>
       <div>
         <label for="r-seccion">Sección *</label>
-        <select id="r-seccion"><option value="">-- Selecciona --</option>${secOpts}</select>
+        <select id="r-seccion" onchange="buscarEstudiante()">
+          <option value="">-- Selecciona --</option>${secOpts}
+        </select>
       </div>
     </div>
-    <label for="r-grado">Grado *</label>
-    <select id="r-grado" disabled style="background:#F5F5F5;color:#555">
-      <option value="${S.gradoSeleccionado}" selected>${S.gradoSeleccionado} Grado</option>
-    </select>
-    <div id="reg-error" style="display:none" class="warn-box"></div>
+
+    <!-- Confirmación de nombre (solo con validar_lista) -->
+    <div id="nombre-lookup" style="display:none;margin-top:14px"></div>
+
+    ${campoNombre}
+
+    <div id="reg-error" style="display:none;margin-top:10px" class="warn-box"></div>
     <div class="btn-row">
       <button class="btn btn-outline" onclick="S.view='inicio';render()">Volver</button>
-      <button class="btn btn-primary" id="btn-comenzar" onclick="confirmarRegistro()">Comenzar examen</button>
+      <button class="btn btn-primary" id="btn-comenzar"
+        style="display:${ex.validar_lista ? 'none' : 'inline-flex'}"
+        onclick="confirmarRegistro()">Comenzar examen</button>
     </div>
   </div>`;
-  secureEl(document.getElementById('r-nombre'));
+
+  if (!ex.validar_lista) secureEl(document.getElementById('r-nombre'));
+}
+
+// Lookup automático cuando el estudiante ingresa número + sección
+var _lookupTimer = null;
+function buscarEstudiante() {
+  if (!S.examen || !S.examen.validar_lista) return;
+  clearTimeout(_lookupTimer);
+  _lookupTimer = setTimeout(_doLookup, 400);
+}
+
+async function _doLookup() {
+  var orden   = parseInt(document.getElementById('r-orden')?.value) || 0;
+  var seccion = document.getElementById('r-seccion')?.value || '';
+  var grado   = S.gradoSeleccionado;
+  var box     = document.getElementById('nombre-lookup');
+  var btnCom  = document.getElementById('btn-comenzar');
+  var errEl   = document.getElementById('reg-error');
+  if (errEl) errEl.style.display = 'none';
+
+  if (!orden || !seccion) {
+    box.style.display = 'none';
+    btnCom.style.display = 'none';
+    return;
+  }
+
+  box.style.display = 'block';
+  box.innerHTML = `<div style="color:#888;font-size:13px;padding:10px 0">🔍 Buscando...</div>`;
+  btnCom.style.display = 'none';
+
+  // Verificar sección autorizada
+  var secs = S.examen.secciones_activas || [];
+  if (secs.length > 0 && !secs.includes(seccion)) {
+    box.innerHTML = `<div class="warn-box">Este examen no está habilitado para la sección ${seccion}. Autorizadas: ${secs.join(', ')}</div>`;
+    return;
+  }
+
+  var { data: found } = await sb.from('estudiantes_lista')
+    .select('id,nombre,numero_orden')
+    .eq('grado', grado).eq('seccion', seccion)
+    .eq('numero_orden', orden).eq('activo', true)
+    .limit(1);
+
+  if (!found || !found.length) {
+    box.innerHTML = `<div class="warn-box">El número <strong>${orden}</strong> no está en la lista de ${grado} sección ${seccion}.<br><small>Verifica tu número de orden o consulta a tu docente.</small></div>`;
+    return;
+  }
+
+  var nombre = found[0].nombre;
+  // Mostrar confirmación
+  box.innerHTML = `
+    <div style="border:2px solid #1B3A6B;border-radius:10px;padding:16px;background:#EEF5FF;text-align:center">
+      <div style="font-size:13px;color:#555;margin-bottom:8px">¿Eres tú?</div>
+      <div style="font-size:18px;font-weight:700;color:#1B3A6B;margin-bottom:14px">${esc(nombre)}</div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-primary" style="min-width:100px"
+          onclick="confirmarNombre('${esc(nombre).replace(/'/g,"\\'")}')">✓ Sí, soy yo</button>
+        <button class="btn btn-outline" style="min-width:100px"
+          onclick="rechazarNombre()">✗ No soy yo</button>
+      </div>
+    </div>`;
+}
+
+function confirmarNombre(nombre) {
+  // Guardar nombre confirmado y mostrar botón de comenzar
+  S._nombreConfirmado = nombre;
+  var box = document.getElementById('nombre-lookup');
+  box.innerHTML = `
+    <div style="border:2px solid #1B5E20;border-radius:10px;padding:12px 16px;background:#E8F5E9;display:flex;align-items:center;gap:10px">
+      <span style="font-size:20px">✓</span>
+      <div>
+        <div style="font-size:13px;color:#555">Identificado como:</div>
+        <div style="font-size:15px;font-weight:700;color:#1B5E20">${esc(nombre)}</div>
+      </div>
+      <button class="btn btn-xs btn-gray" style="margin-left:auto" onclick="rehacerLookup()">Cambiar</button>
+    </div>`;
+  document.getElementById('btn-comenzar').style.display = 'inline-flex';
+}
+
+function rechazarNombre() {
+  S._nombreConfirmado = null;
+  var box = document.getElementById('nombre-lookup');
+  box.innerHTML = `<div class="warn-box">Verifica tu número de orden y sección, o avísale a tu docente.</div>`;
+  document.getElementById('btn-comenzar').style.display = 'none';
+}
+
+function rehacerLookup() {
+  S._nombreConfirmado = null;
+  document.getElementById('r-orden').value = '';
+  document.getElementById('r-seccion').value = '';
+  document.getElementById('nombre-lookup').style.display = 'none';
+  document.getElementById('btn-comenzar').style.display = 'none';
+  document.getElementById('r-orden').focus();
 }
 
 async function confirmarRegistro() {
-  var nombre  = document.getElementById('r-nombre').value.trim();
-  var orden   = parseInt(document.getElementById('r-orden').value) || 0;
-  var seccion = document.getElementById('r-seccion').value;
-  var grado   = S.gradoSeleccionado; // fijo, no editable
+  var orden   = parseInt(document.getElementById('r-orden')?.value) || 0;
+  var seccion = document.getElementById('r-seccion')?.value || '';
+  var grado   = S.gradoSeleccionado;
   var errEl   = document.getElementById('reg-error');
   var btn     = document.getElementById('btn-comenzar');
+
+  // Nombre: desde lookup confirmado (validar_lista) o campo manual
+  var nombre = S.examen.validar_lista
+    ? (S._nombreConfirmado || '')
+    : (document.getElementById('r-nombre')?.value.trim() || '');
 
   function showErr(msg) { errEl.style.display = 'block'; errEl.innerHTML = msg; }
   errEl.style.display = 'none';
 
-  if (!nombre || !seccion || orden < 1) { showErr('Completa todos los campos correctamente.'); return; }
+  if (!nombre || !seccion || orden < 1) {
+    showErr('Completa todos los campos correctamente.');
+    return;
+  }
+
   btn.disabled = true; btn.textContent = 'Verificando...';
 
   // Sección autorizada
   var secs = S.examen.secciones_activas || [];
   if (secs.length > 0 && !secs.includes(seccion)) {
-    showErr('Este examen no está habilitado para la sección ' + seccion + '. Autorizadas: ' + secs.join(', '));
+    showErr('Sección no autorizada: ' + secs.join(', '));
     btn.disabled = false; btn.textContent = 'Comenzar examen'; return;
   }
 
-  // Validar contra lista
-  if (S.examen.validar_lista) {
+  // Validar contra lista (solo si no viene de lookup confirmado)
+  if (S.examen.validar_lista && !S._nombreConfirmado) {
+    showErr('Confirma tu identidad primero ingresando tu número y sección.');
+    btn.disabled = false; btn.textContent = 'Comenzar examen'; return;
+  }
+
+  // Si NO tiene lista, validar nombre manual con nameMatch
+  if (!S.examen.validar_lista) {
     var { data: estFound } = await sb.from('estudiantes_lista')
-      .select('id,nombre,numero_orden')
-      .eq('grado', grado).eq('seccion', seccion).eq('numero_orden', orden).eq('activo', true);
-    if (!estFound || !estFound.length) {
-      showErr('El número <strong>' + orden + '</strong> no está registrado en la lista de ' + grado + ' sección ' + seccion + '.');
-      btn.disabled = false; btn.textContent = 'Comenzar examen'; return;
-    }
-    var match = estFound.find(e => nameMatch(e.nombre, nombre));
-    if (!match) {
-      showErr('El nombre no coincide con el número ' + orden + '. Escríbelo tal como aparece en la lista.');
-      btn.disabled = false; btn.textContent = 'Comenzar examen'; return;
+      .select('id,nombre').eq('grado', grado).eq('seccion', seccion)
+      .eq('numero_orden', orden).eq('activo', true);
+    if (estFound && estFound.length) {
+      var match = estFound.find(e => nameMatch(e.nombre, nombre));
+      if (!match) {
+        showErr('El nombre no coincide con el número ' + orden + '.');
+        btn.disabled = false; btn.textContent = 'Comenzar examen'; return;
+      }
     }
   }
 
-  // Envío previo
-  var { data: dup } = await sb.from('respuestas_examenes').select('id')
-    .eq('examen_id', S.examen.id).eq('numero_orden', orden).eq('seccion', seccion).eq('grado', grado).limit(1);
+  // Envío previo — mostrar nombre registrado si existe
+  var { data: dup } = await sb.from('respuestas_examenes').select('id,nombre')
+    .eq('examen_id', S.examen.id).eq('numero_orden', orden)
+    .eq('seccion', seccion).eq('grado', grado).limit(1);
   if (dup && dup.length) {
-    showErr('Ya enviaste este examen. Solo se permite un envío por estudiante.');
+    var nomDup = dup[0].nombre ? ' (registrado como: <strong>' + esc(dup[0].nombre) + '</strong>)' : '';
+    showErr('Ya existe un envío para el número ' + orden + ' en sección ' + seccion + nomDup + '. Solo se permite un envío.');
     btn.disabled = false; btn.textContent = 'Comenzar examen'; return;
   }
 
@@ -201,6 +324,7 @@ async function confirmarRegistro() {
     btn.disabled = false; btn.textContent = 'Comenzar examen'; return;
   }
 
+  S._nombreConfirmado = null; // limpiar
   S.est = { nombre, orden, grado, seccion, codigo: inicio ? inicio.codigo : codigo };
   mostrarComprobante(nombre, grado, seccion, orden, S.est.codigo, S.examen.titulo);
 }
