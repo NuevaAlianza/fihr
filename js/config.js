@@ -6,7 +6,7 @@ var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // ── URL de la app de clases ───────────────────────────────────
 // Cambia esta URL por la de tu plataforma de clases
-var CLASE_APP_URL = 'https://santocuradearsrd-create.github.io/clases/';
+var CLASE_APP_URL = 'https://nuevaalianza.github.io/fihr/examenes.html?grado=6to&periodo=4';
 
 // ── Constantes ────────────────────────────────────────────────
 var SECCIONES = ['A','B','C','D','E'];
