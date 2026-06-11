@@ -366,14 +366,16 @@ function renderExamen() {
   var qs = S.examen.preguntas || [];
   if (S.currentQ === undefined) S.currentQ = 0;
   var qi = Math.min(S.currentQ, qs.length - 1);
-  var resp_count = Object.keys(S.resp).length;
+  var evalQs = qs.filter(q => q.tipo !== 'lectura');
+  var resp_count = Object.keys(S.resp).filter(k => qs[k] && qs[k].tipo !== 'lectura').length;
   document.getElementById('nav-sub').textContent = S.est.nombre + ' · ' + S.est.seccion;
-  var pct = qs.length > 0 ? Math.round(resp_count / qs.length * 100) : 0;
-  var navDots = qs.map((_, i) => {
+  var pct = evalQs.length > 0 ? Math.round(resp_count / evalQs.length * 100) : 0;
+  var navDots = qs.map((q, i) => {
+    var isRead = q.tipo === 'lectura';
     var ans = S.resp[i] !== undefined && S.resp[i] !== null && S.resp[i] !== '';
     var active = i === qi;
-    var bg = active ? '#1B3A6B' : (ans ? '#1B5E20' : '#ccc');
-    return `<div onclick="goToQ(${i})" style="width:${active?'28px':'10px'};height:10px;border-radius:5px;background:${bg};cursor:pointer;transition:.2s;flex-shrink:0"></div>`;
+    var bg = active ? '#1B3A6B' : (isRead ? '#93C5FD' : (ans ? '#1B5E20' : '#ccc'));
+    return `<div onclick="goToQ(${i})" title="${isRead?'Lectura':'Pregunta '+(i+1)}" style="width:${active?'28px':'10px'};height:10px;border-radius:5px;background:${bg};cursor:pointer;transition:.2s;flex-shrink:0"></div>`;
   }).join('');
   var html = `
   <div style="background:#fff;border:1px solid var(--brd);border-radius:10px;padding:12px 14px;margin-bottom:12px;position:sticky;top:52px;z-index:10">
@@ -389,14 +391,16 @@ function renderExamen() {
   </div>`;
   html += renderPregunta(qs[qi], qi);
   var isLast = qi === qs.length - 1;
+  var esLectura = qs[qi] && qs[qi].tipo === 'lectura';
   var answered = S.resp[qi] !== undefined && S.resp[qi] !== null && S.resp[qi] !== '';
+  var nextLabel = esLectura ? 'Continuar &#8594;' : (answered ? 'Siguiente &#8594;' : 'Omitir &#8594;');
   html += `<div style="display:flex;gap:10px;margin-top:4px">
     ${qi > 0 ? `<button class="btn btn-outline" style="flex:1" onclick="goToQ(${qi-1})">&#8592; Anterior</button>` : '<div style="flex:1"></div>'}
     ${!isLast
-      ? `<button class="btn btn-primary" style="flex:2" onclick="goToQ(${qi+1})">${answered?'Siguiente &#8594;':'Omitir &#8594;'}</button>`
+      ? `<button class="btn btn-primary" style="flex:2" onclick="goToQ(${qi+1})">${nextLabel}</button>`
       : `<button class="btn btn-success" style="flex:2;font-size:15px" onclick="submitExamen(false)">Enviar examen</button>`}
   </div>
-  <div style="font-size:12px;color:var(--sub);text-align:center;margin-top:8px">${qs.length-resp_count>0?qs.length-resp_count+' sin responder':'Todas respondidas'}</div>`;
+  <div style="font-size:12px;color:var(--sub);text-align:center;margin-top:8px">${evalQs.length-resp_count>0?evalQs.length-resp_count+' sin responder':'Todas respondidas'}</div>`;
   document.getElementById('main-content').innerHTML = html;
   document.querySelectorAll('.secure-txt').forEach(el => secureEl(el));
   initDrag();
@@ -414,6 +418,18 @@ function goToQ(i) {
 }
 
 function renderPregunta(q, i) {
+  // Tipo lectura: bloque visual no evaluado
+  if (q.tipo === 'lectura') {
+    return `<div class="lectura-card">
+      <div class="lectura-header">
+        <span style="font-size:18px">📖</span>
+        <span class="lectura-label">Lectura</span>
+        ${q.texto ? `<span class="lectura-titulo">${esc(q.texto)}</span>` : ''}
+      </div>
+      <div class="lectura-body">${esc(q.contenido||'')}</div>
+    </div>`;
+  }
+
   var resp = S.resp[i];
   var answered = resp !== undefined && resp !== null && resp !== '';
   var inner = '';
@@ -421,9 +437,8 @@ function renderPregunta(q, i) {
     case 'multiple':
       var L = ['A','B','C','D'];
       inner = '<div class="op-list">' + (q.opciones||[]).map((op, oi) =>
-        `<button class="op-btn${resp===oi?' selected':''}" onclick="setR(${i},${oi});renderExamen()"
-          style="${resp===oi?'border-width:2.5px;border-color:#1B3A6B;background:#DCE8F5;font-weight:700':''}">
-          <div class="op-letra" style="${resp===oi?'background:#1B3A6B':''}">${resp===oi?'✓':L[oi]}</div>
+        `<button class="op-btn${resp===oi?' selected':''}" onclick="setR(${i},${oi});renderExamen()">
+          <div class="op-letra">${resp===oi?'✓':L[oi]}</div>
           <span>${esc(op)}</span>
         </button>`).join('') + '</div>';
       break;
@@ -546,6 +561,9 @@ function calcularNota(examen, respuestas) {
         });
         item.pts = Math.round(pts*blancoCorrectos/correctBlanks.length);
         break;
+      case 'lectura':
+        // Bloque informativo, no evaluado
+        item.auto = true; item.pts = 0; puntos_maximo -= pts; break;
       case 'texto':
         item.pendiente = true; puntos_texto_max += pts; break;
       case 'escala':
@@ -563,7 +581,9 @@ function calcularNota(examen, respuestas) {
 async function submitExamen(auto) {
   if (!auto) {
     var qs = S.examen.preguntas || [];
-    var sin = qs.length - Object.keys(S.resp).length;
+    var evalQs2 = qs.filter(q => q.tipo !== 'lectura');
+    var respCount2 = Object.keys(S.resp).filter(k => qs[k] && qs[k].tipo !== 'lectura').length;
+    var sin = evalQs2.length - respCount2;
     if (sin > 0 && !confirm('Tienes ' + sin + ' pregunta(s) sin responder. ¿Enviar de todas formas?')) return;
   }
   stopTimer();

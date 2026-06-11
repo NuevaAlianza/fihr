@@ -66,6 +66,7 @@ async function buildExamenesTab() {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <span style="font-size:14px;color:var(--sub)">${S.examenes.length} examen(es)</span>
       <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="btn btn-gray btn-sm" onclick="mostrarEstructuraJSON()">{ } Estructura JSON</button>
         <button class="btn btn-gray btn-sm" onclick="mostrarImportJSON()">↑ Importar JSON</button>
         <button class="btn btn-primary btn-sm" onclick="S.adminExamen=null;S.qBuilders=[];S.view='admin-crear';render()">+ Nuevo examen</button>
       </div>
@@ -449,6 +450,7 @@ function renderAdminCrear() {
         <button class="btn btn-outline btn-sm" onclick="addQ('completar')">+ Completar</button>
         <button class="btn btn-outline btn-sm" onclick="addQ('ordenar')">+ Ordenar</button>
         <button class="btn btn-outline btn-sm" onclick="addQ('escala')">+ Escala 1-5</button>
+        <button class="btn btn-sm" style="background:#EBF2FF;color:#1B3A6B;border:1.5px solid #C7DEFF" onclick="addQ('lectura')">📖 + Lectura</button>
       </div>
     </div>
     <div class="btn-row">
@@ -470,14 +472,15 @@ function addQ(tipo) {
     vf:        { tipo:'vf',        texto:'', correcta:'V', puntos:5 },
     completar: { tipo:'completar', texto:'La vida de Jesús es ___ y su misión fue ___', puntos:10 },
     ordenar:   { tipo:'ordenar',   texto:'Ordena los siguientes elementos:', items:['Elemento 1','Elemento 2','Elemento 3'], puntos:10 },
-    escala:    { tipo:'escala',    texto:'', etiquetas:['Nada','Poco','Regular','Bastante','Mucho'], puntos:5 }
+    escala:    { tipo:'escala',    texto:'', etiquetas:['Nada','Poco','Regular','Bastante','Mucho'], puntos:5 },
+    lectura:   { tipo:'lectura',   texto:'Título del texto (opcional)', contenido:'Escribe aquí el texto de lectura o contexto que el estudiante debe leer antes de responder las preguntas siguientes.', puntos:0 }
   };
   S.qBuilders.push({...defaults[tipo]}); renderQBuilders();
 }
 
 function renderQBuilders() {
   var el = document.getElementById('q-list'); if (!el) return;
-  var TN = { multiple:'Opción múltiple', texto:'Texto libre', vf:'Verdadero/Falso', completar:'Completar la frase', ordenar:'Ordenar elementos', escala:'Escala 1-5' };
+  var TN = { multiple:'Opción múltiple', texto:'Texto libre', vf:'Verdadero/Falso', completar:'Completar la frase', ordenar:'Ordenar elementos', escala:'Escala 1-5', lectura:'📖 Lectura / Contexto' };
   el.innerHTML = S.qBuilders.map((q, i) => {
     var extra = '';
     if (q.tipo==='multiple') {
@@ -490,10 +493,16 @@ function renderQBuilders() {
       extra = `<small style="color:var(--sub);display:block;margin-top:4px">Usa ___ para los espacios.</small><div style="margin-top:6px"><label style="font-size:12px;color:#1B5E20;font-weight:700">Respuestas correctas (una por línea):</label><textarea rows="3" style="font-size:12px;color:#1B5E20;border-color:#A5D6A7" oninput="S.qBuilders[${i}].respuestas=this.value.split('\\n').filter(s=>s.trim())">${esc((q.respuestas||[]).join('\n'))}</textarea></div>`;
     } else if (q.tipo==='texto') {
       extra = `<div style="margin-top:6px"><label style="font-size:12px">Criterios de evaluación:</label><textarea rows="2" style="font-size:13px" oninput="S.qBuilders[${i}].rubrica=this.value">${esc(q.rubrica||'')}</textarea></div>`;
+    } else if (q.tipo==='lectura') {
+      extra = `<div style="margin-top:6px"><label style="font-size:12px;color:#1B3A6B;font-weight:700">Contenido del texto de lectura:</label><textarea rows="5" style="font-size:13px;border-color:#C7DEFF;background:#F8FAFF" oninput="S.qBuilders[${i}].contenido=this.value">${esc(q.contenido||'')}</textarea><div style="font-size:11px;color:#64748B;margin-top:4px">💡 Este bloque se muestra al estudiante como contexto. No suma puntos.</div></div>`;
     } else if (q.tipo==='escala') {
       extra = `<div style="margin-top:6px"><label style="font-size:12px">Etiquetas 1-5 (separadas por coma):</label><input type="text" style="font-size:13px" value="${esc((q.etiquetas||[]).join(','))}" oninput="S.qBuilders[${i}].etiquetas=this.value.split(',').map(s=>s.trim())"></div>`;
     }
-    return `<div class="q-builder"><span class="q-type-pill">${TN[q.tipo]}</span><button class="remove-q" onclick="S.qBuilders.splice(${i},1);renderQBuilders()">Quitar</button><label style="font-size:12px">Pregunta ${i+1}</label><textarea rows="2" style="font-size:13px" oninput="S.qBuilders[${i}].texto=this.value">${esc(q.texto||'')}</textarea><div style="display:flex;gap:8px;align-items:center;margin-top:4px"><label style="font-size:12px;margin:0;flex-shrink:0">Puntos:</label><input type="number" value="${q.puntos||5}" min="1" max="100" style="width:65px;font-size:13px" oninput="S.qBuilders[${i}].puntos=parseInt(this.value)||5"></div>${extra}</div>`;
+    var esLectura = q.tipo === 'lectura';
+    var tituloLabel = esLectura ? 'Título del texto (opcional)' : 'Pregunta ' + (i+1);
+    var ptsField = esLectura ? '' : `<div style="display:flex;gap:8px;align-items:center;margin-top:4px"><label style="font-size:12px;margin:0;flex-shrink:0">Puntos:</label><input type="number" value="${q.puntos||5}" min="1" max="100" style="width:65px;font-size:13px" oninput="S.qBuilders[${i}].puntos=parseInt(this.value)||5"></div>`;
+    var builderStyle = esLectura ? 'border-color:#C7DEFF;background:#F0F7FF' : '';
+    return `<div class="q-builder" style="${builderStyle}"><span class="q-type-pill">${TN[q.tipo]}</span><button class="remove-q" onclick="S.qBuilders.splice(${i},1);renderQBuilders()">Quitar</button><label style="font-size:12px">${tituloLabel}</label><textarea rows="2" style="font-size:13px" oninput="S.qBuilders[${i}].texto=this.value">${esc(q.texto||'')}</textarea>${ptsField}${extra}</div>`;
   }).join('');
 }
 
@@ -630,4 +639,130 @@ async function buscarCodigo() {
   if (!data || !data.ok) { toast('Código no encontrado en el sistema', 3000); return; }
   var d = data.data;
   alert('✓ Código válido\n\nExamen: '+d.examen_titulo+'\nEstudiante: '+d.nombre+'\nGrado: '+d.grado+' · Sección: '+d.seccion+' · Orden: '+d.numero_orden+'\nInició: '+d.iniciado_at+'\nEstado: '+(d.envio_completado?'✓ Envió el examen':'⚠ Solo inició, no envió'));
+}
+
+// ── Modal: Estructura JSON ────────────────────────────────────
+function mostrarEstructuraJSON() {
+  var ejemplo = {
+    "titulo": "Examen S3 — Los Sacramentos",
+    "grado": "4to",
+    "periodo": 2,
+    "tiempo_minutos": 40,
+    "descripcion": "Evaluación del tercer semana del período 2",
+    "instrucciones": "Lee cada pregunta con atención antes de responder.",
+    "rubrica_txt": "Se evalúa comprensión conceptual y redacción.",
+    "secciones_activas": ["A", "B"],
+    "validar_lista": true,
+    "activo": false,
+    "preguntas": [
+      {
+        "tipo": "lectura",
+        "texto": "El Bautismo — Texto de referencia",
+        "contenido": "El Bautismo es el primer sacramento de la Iglesia...\nMediante él, la persona es incorporada a la comunidad cristiana."
+      },
+      {
+        "tipo": "multiple",
+        "texto": "¿Cuál es el primer sacramento de iniciación cristiana?",
+        "opciones": ["La Eucaristía", "El Bautismo", "La Confirmación", "La Penitencia"],
+        "correcta": "B",
+        "puntos": 5
+      },
+      {
+        "tipo": "vf",
+        "texto": "La Eucaristía es el primer sacramento que recibe un cristiano.",
+        "correcta": "F",
+        "puntos": 5
+      },
+      {
+        "tipo": "completar",
+        "texto": "El Bautismo nos incorpora a la ___ y nos libera del ___.",
+        "respuestas": ["Iglesia", "pecado original"],
+        "puntos": 10
+      },
+      {
+        "tipo": "ordenar",
+        "texto": "Ordena los sacramentos de iniciación en el orden correcto:",
+        "items": ["Bautismo", "Confirmación", "Eucaristía"],
+        "puntos": 10
+      },
+      {
+        "tipo": "texto",
+        "texto": "Explica con tus propias palabras qué significa ser bautizado.",
+        "rubrica": "Menciona al menos: incorporación a la Iglesia, gracia, agua.",
+        "puntos": 10
+      },
+      {
+        "tipo": "escala",
+        "texto": "¿Qué tan importante crees que es el Bautismo en tu vida?",
+        "etiquetas": ["Nada", "Poco", "Regular", "Bastante", "Mucho"],
+        "puntos": 5
+      }
+    ]
+  };
+
+  var jsonStr = JSON.stringify(ejemplo, null, 2);
+
+  var overlay = document.createElement('div');
+  overlay.id = 'json-struct-overlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Estructura JSON para importar examen</h3>
+        <button class="modal-close" onclick="document.getElementById('json-struct-overlay').remove()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-sub">
+          Copia este JSON, modifica los valores según tu examen y luego usa <strong>"↑ Importar JSON"</strong> para cargarlo.
+          Incluye todos los tipos de pregunta disponibles como referencia.
+        </p>
+        <div class="json-block">
+          <button class="json-copy-btn" id="json-copy-struct-btn" onclick="copiarEstructuraJSON()">Copiar</button>
+          <pre id="json-struct-pre">${escJsonDisplay(jsonStr)}</pre>
+        </div>
+        <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px">
+          <div style="background:#F0F7FF;border:1px solid #C7DEFF;border-radius:8px;padding:12px">
+            <div style="font-weight:700;color:#1B3A6B;margin-bottom:6px">Tipos de pregunta</div>
+            <div style="color:#475569;line-height:1.8">
+              📖 <code>lectura</code> — Bloque de contexto, sin nota<br>
+              ✅ <code>multiple</code> — Opción múltiple (A–D)<br>
+              ✔️ <code>vf</code> — Verdadero / Falso<br>
+              ✏️ <code>completar</code> — Completar con ___<br>
+              ↕️ <code>ordenar</code> — Arrastrar y ordenar<br>
+              📝 <code>texto</code> — Respuesta abierta (revisión manual)<br>
+              ⭐ <code>escala</code> — Escala 1 a 5
+            </div>
+          </div>
+          <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:12px">
+            <div style="font-weight:700;color:#92400E;margin-bottom:6px">Campos obligatorios</div>
+            <div style="color:#475569;line-height:1.8">
+              <code>titulo</code>, <code>grado</code>, <code>periodo</code><br>
+              <code>preguntas[]</code> con al menos 1 item<br>
+              Cada pregunta: <code>tipo</code> + <code>texto</code><br>
+              <code>correcta</code>: "A","B","C","D" o "V"/"F"<br>
+              <code>activo: false</code> para crear cerrado
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+}
+
+function escJsonDisplay(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copiarEstructuraJSON() {
+  var pre = document.getElementById('json-struct-pre');
+  if (!pre) return;
+  var text = pre.textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    var btn = document.getElementById('json-copy-struct-btn');
+    if (btn) { btn.textContent = '✓ Copiado'; btn.classList.add('copied'); }
+    setTimeout(function() {
+      if (btn) { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }
+    }, 2000);
+  }).catch(function() { toast('No se pudo copiar al portapapeles', 3000); });
 }
