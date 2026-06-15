@@ -678,11 +678,14 @@ async function submitExamen(auto) {
     var sin = evalQs2.length - respCount2;
     if (sin > 0 && !confirm('Tienes ' + sin + ' pregunta(s) sin responder. ¿Enviar de todas formas?')) return;
   }
-  stopTimer();
+  // Recoger respuestas de texto antes de detener el timer
   document.querySelectorAll('.secure-txt').forEach(el => {
     if (el.id && el.id.startsWith('txt_')) { var qi = parseInt(el.id.split('_')[1]); if (el.value.trim()) S.resp[qi] = el.value.trim(); }
     if (el.id && el.id.startsWith('bl_'))  { var p = el.id.split('_'); var qi = parseInt(p[1]), bi = parseInt(p[2]); if (!S.resp[qi]) S.resp[qi] = {}; S.resp[qi][bi] = el.value.trim(); }
   });
+  // Respaldo local por si falla el envío
+  try { sessionStorage.setItem('sca_resp_backup', JSON.stringify({ examen_id: S.examen.id, resp: S.resp })); } catch(e) {}
+  stopTimer();
   var { puntos_auto, puntos_texto_max, puntos_maximo, detalle } = calcularNota(S.examen, S.resp);
   var tiene_texto = puntos_texto_max > 0;
   var { data: rpcData, error } = await sb.rpc('public_enviar_respuesta', {
@@ -693,7 +696,8 @@ async function submitExamen(auto) {
     p_detalle_notas: detalle, p_tiene_texto: tiene_texto
   });
   if (!error && rpcData?.error) { toast('No se pudo enviar: ' + rpcData.error, 4000); return; }
-  if (error) { toast('Error al guardar: ' + error.message, 4000); return; }
+  if (error) { _mostrarRetrySubmit(error.message); return; }
+  try { sessionStorage.removeItem('sca_resp_backup'); } catch(e) {}
   document.removeEventListener('visibilitychange', _onVisibilityChange);
   if (S._sesionToken) {
     sb.rpc('public_finalizar_sesion', { p_token: S._sesionToken }).catch(function() {});
@@ -704,6 +708,30 @@ async function submitExamen(auto) {
     sb.rpc('public_registrar_cambios_pestana', { p_respuesta_id: respId, p_cambios: S.cambiosPestana }).catch(function() {});
   }
   S.view = 'enviado'; render();
+}
+
+function _mostrarRetrySubmit(msg) {
+  var mc = document.getElementById('main-content');
+  if (!mc) return;
+  mc.innerHTML = `
+    <div style="max-width:400px;margin:60px auto;padding:28px 24px;background:#fff;border-radius:12px;border:1px solid var(--brd);text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+      <div style="font-weight:700;font-size:17px;margin-bottom:8px;color:#1B3A6B">Error al enviar el examen</div>
+      <div style="font-size:13px;color:#555;margin-bottom:6px">Tus respuestas están guardadas en este dispositivo.</div>
+      <div style="font-size:12px;color:#999;background:#f5f5f5;border-radius:6px;padding:6px 10px;margin-bottom:20px">${esc(msg || 'Error de conexión')}</div>
+      <button class="btn btn-primary" onclick="reintentarSubmit()" style="width:100%">🔄 Reintentar envío</button>
+    </div>`;
+}
+
+async function reintentarSubmit() {
+  // Recuperar respuestas del respaldo si S.resp quedó vacío
+  if (!Object.keys(S.resp).length) {
+    try {
+      var backup = JSON.parse(sessionStorage.getItem('sca_resp_backup') || 'null');
+      if (backup && S.examen && backup.examen_id === S.examen.id) S.resp = backup.resp;
+    } catch(e) {}
+  }
+  await submitExamen(true);
 }
 
 function renderEnviado() {

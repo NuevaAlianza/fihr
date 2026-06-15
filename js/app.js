@@ -29,3 +29,26 @@ function render() {
 
 // ── Arrancar ──────────────────────────────────────────────────
 render();
+
+// ── Banner de actualización SW ────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', function(e) {
+    if (!e.data || e.data.type !== 'SW_UPDATED') return;
+    if (document.getElementById('sw-update-banner')) return;
+    var banner = document.createElement('div');
+    banner.id = 'sw-update-banner';
+    banner.style.cssText = [
+      'position:fixed;bottom:0;left:0;right:0;z-index:9999',
+      'background:#1B3A6B;color:#fff',
+      'padding:10px 16px',
+      'display:flex;align-items:center;justify-content:space-between;gap:12px',
+      'font-size:14px;font-family:inherit;box-shadow:0 -2px 8px rgba(0,0,0,.2)'
+    ].join(';');
+    banner.innerHTML = '<span>🆕 Nueva versión disponible</span>'
+      + '<button onclick="window.location.reload()" style="'
+      + 'background:#fff;color:#1B3A6B;border:none;border-radius:6px;'
+      + 'padding:6px 14px;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap'
+      + '">🔄 Recargar</button>';
+    document.body.appendChild(banner);
+  });
+}

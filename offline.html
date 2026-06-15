@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Sin conexión · Exámenes SCA</title>
+<meta name="theme-color" content="#1B3A6B">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #F0F4F8;
+    color: #1a1a2e;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  nav {
+    background: #1B3A6B;
+    color: #fff;
+    padding: 0 16px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: .01em;
+  }
+  .center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #DDE3EC;
+    border-radius: 14px;
+    padding: 36px 28px;
+    text-align: center;
+    max-width: 360px;
+    width: 100%;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  }
+  .icon {
+    font-size: 52px;
+    margin-bottom: 16px;
+    line-height: 1;
+  }
+  h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1B3A6B;
+    margin-bottom: 10px;
+  }
+  p {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.55;
+    margin-bottom: 24px;
+  }
+  button {
+    background: #1B3A6B;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity .15s;
+  }
+  button:hover { opacity: .88; }
+  button:active { opacity: .75; }
+</style>
+</head>
+<body>
+<nav>Exámenes · Santo Cura de Ars</nav>
+<div class="center">
+  <div class="card">
+    <div class="icon">📡</div>
+    <h1>Sin conexión</h1>
+    <p>Verifica tu red e intenta de nuevo.<br>Si estabas realizando un examen, no cierres esta pestaña.</p>
+    <button onclick="window.location.reload()">Reintentar</button>
+  </div>
+</div>
+</body>
+</html>
