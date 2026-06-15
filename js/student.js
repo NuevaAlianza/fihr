@@ -452,7 +452,7 @@ async function entrarAlExamen() {
   try {
     var { data: sesData } = await sb.rpc('public_iniciar_sesion', {
       p_examen_id: S.examen.id,
-      p_numero_orden: S.est.numero_orden,
+      p_numero_orden: S.est.orden,
       p_seccion: S.est.seccion,
       p_token: S._sesionToken
     });
