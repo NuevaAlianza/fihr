@@ -89,6 +89,14 @@ async function sha256(m) {
   return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join('');
 }
 
+function generarToken() {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
 // ── PWA Install ───────────────────────────────────────────────
 var _deferredInstall = null;
 window.addEventListener('beforeinstallprompt', e => {

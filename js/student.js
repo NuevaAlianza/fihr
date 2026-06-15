@@ -98,7 +98,7 @@ async function renderInicio() {
 async function iniciarExamen(id) {
   var { data, error } = await sb.from('examenes').select('*').eq('id', id).single();
   if (error || !data || !data.activo) { toast('Examen no disponible'); return; }
-  S.examen = data; S.resp = {}; S.ordenItems = {}; S._nombreConfirmado = null;
+  S.examen = data; S.resp = {}; S.ordenItems = {}; S._nombreConfirmado = null; S._claveEstudiante = null;
   S.view = 'registro'; render();
 }
 
@@ -127,6 +127,7 @@ function renderRegistro() {
     ${ex.validar_lista
       ? '<div class="info-box">Ingresa tu número de orden y sección — el sistema encontrará tu nombre automáticamente.</div>'
       : ''}
+    ${secs.length > 0 ? `<div class="info-box" style="background:var(--am2);border-color:#FED7AA;color:var(--am)">📌 Habilitado para sección: <strong>${secs.join(', ')}</strong></div>` : ''}
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div>
@@ -136,7 +137,7 @@ function renderRegistro() {
       </div>
       <div>
         <label for="r-seccion">Sección *</label>
-        <select id="r-seccion" onchange="buscarEstudiante()">
+        <select id="r-seccion" onchange="if(verificarSeccion())buscarEstudiante()">
           <option value="">-- Selecciona --</option>${secOpts}
         </select>
       </div>
@@ -157,6 +158,20 @@ function renderRegistro() {
   </div>`;
 
   if (!ex.validar_lista) secureEl(document.getElementById('r-nombre'));
+}
+
+function verificarSeccion() {
+  var seccion = document.getElementById('r-seccion')?.value || '';
+  var errEl = document.getElementById('reg-error');
+  if (!seccion || !S.examen) { if (errEl) errEl.style.display = 'none'; return true; }
+  var secs = S.examen.secciones_activas || [];
+  if (secs.length > 0 && !secs.includes(seccion)) {
+    if (errEl) { errEl.style.display = 'block'; errEl.innerHTML = '⚠️ Este examen no está disponible para la sección <strong>' + seccion + '</strong>. Secciones autorizadas: ' + secs.join(', '); }
+    document.getElementById('btn-comenzar').style.display = 'none';
+    return false;
+  }
+  if (errEl) errEl.style.display = 'none';
+  return true;
 }
 
 // Lookup automático cuando el estudiante ingresa número + sección
@@ -193,11 +208,20 @@ async function _doLookup() {
     return;
   }
 
-  var { data: found } = await sb.from('estudiantes_lista')
-    .select('id,nombre,numero_orden')
+  var { data: found, error: fErr } = await sb.from('estudiantes_lista')
+    .select('id,nombre,numero_orden,clave')
     .eq('grado', grado).eq('seccion', seccion)
     .eq('numero_orden', orden).eq('activo', true)
     .limit(1);
+  if (fErr) {
+    var fb = await sb.from('estudiantes_lista')
+      .select('id,nombre,numero_orden')
+      .eq('grado', grado).eq('seccion', seccion)
+      .eq('numero_orden', orden).eq('activo', true)
+      .limit(1);
+    found = fb.data;
+  }
+  S._claveEstudiante = (found && found[0]?.clave) || null;
 
   if (!found || !found.length) {
     box.innerHTML = `<div class="warn-box">El número <strong>${orden}</strong> no está en la lista de ${grado} sección ${seccion}.<br><small>Verifica tu número de orden o consulta a tu docente.</small></div>`;
@@ -220,30 +244,72 @@ async function _doLookup() {
 }
 
 function confirmarNombre(nombre) {
-  // Guardar nombre confirmado y mostrar botón de comenzar
   S._nombreConfirmado = nombre;
   var box = document.getElementById('nombre-lookup');
-  box.innerHTML = `
-    <div style="border:2px solid #1B5E20;border-radius:10px;padding:12px 16px;background:#E8F5E9;display:flex;align-items:center;gap:10px">
-      <span style="font-size:20px">✓</span>
-      <div>
-        <div style="font-size:13px;color:#555">Identificado como:</div>
-        <div style="font-size:15px;font-weight:700;color:#1B5E20">${esc(nombre)}</div>
-      </div>
-      <button class="btn btn-xs btn-gray" style="margin-left:auto" onclick="rehacerLookup()">Cambiar</button>
-    </div>`;
-  document.getElementById('btn-comenzar').style.display = 'inline-flex';
+  if (S._claveEstudiante) {
+    box.innerHTML = `
+      <div style="border:2px solid #1B3A6B;border-radius:10px;padding:16px;background:#EEF5FF">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <div>
+            <div style="font-size:13px;color:#555">Identificado como:</div>
+            <div style="font-size:15px;font-weight:700;color:#1B3A6B">${esc(nombre)}</div>
+          </div>
+          <button class="btn btn-xs btn-gray" style="margin-left:auto" onclick="rehacerLookup()">Cambiar</button>
+        </div>
+        <label style="font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Ingresa tu clave personal</label>
+        <input type="text" id="clave-input" maxlength="8" placeholder="——————"
+          style="text-transform:uppercase;letter-spacing:4px;font-weight:700;font-size:20px;text-align:center;margin-top:0"
+          autocomplete="off" oninput="verificarClave()">
+        <div id="clave-error" style="display:none;color:#B71C1C;font-size:12px;margin-top:6px"></div>
+      </div>`;
+    var ci = document.getElementById('clave-input');
+    if (ci) { secureEl(ci); ci.focus(); }
+  } else {
+    box.innerHTML = `
+      <div style="border:2px solid #1B5E20;border-radius:10px;padding:12px 16px;background:#E8F5E9;display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">✓</span>
+        <div>
+          <div style="font-size:13px;color:#555">Identificado como:</div>
+          <div style="font-size:15px;font-weight:700;color:#1B5E20">${esc(nombre)}</div>
+        </div>
+        <button class="btn btn-xs btn-gray" style="margin-left:auto" onclick="rehacerLookup()">Cambiar</button>
+      </div>`;
+    document.getElementById('btn-comenzar').style.display = 'inline-flex';
+  }
+}
+
+function verificarClave() {
+  var input = document.getElementById('clave-input');
+  var errEl = document.getElementById('clave-error');
+  if (!input || !errEl) return;
+  var typed = input.value.trim().toUpperCase();
+  var expected = (S._claveEstudiante || '').trim().toUpperCase();
+  if (!typed) {
+    errEl.style.display = 'none'; input.style.borderColor = '';
+    document.getElementById('btn-comenzar').style.display = 'none'; return;
+  }
+  if (typed === expected) {
+    errEl.style.display = 'none'; input.style.borderColor = '#1B5E20';
+    document.getElementById('btn-comenzar').style.display = 'inline-flex';
+  } else if (typed.length >= expected.length) {
+    errEl.style.display = 'block'; errEl.textContent = 'Clave incorrecta. Verifica con tu docente.';
+    input.style.borderColor = '#B71C1C';
+    document.getElementById('btn-comenzar').style.display = 'none';
+  } else {
+    errEl.style.display = 'none'; input.style.borderColor = '';
+    document.getElementById('btn-comenzar').style.display = 'none';
+  }
 }
 
 function rechazarNombre() {
-  S._nombreConfirmado = null;
+  S._nombreConfirmado = null; S._claveEstudiante = null;
   var box = document.getElementById('nombre-lookup');
   box.innerHTML = `<div class="warn-box">Verifica tu número de orden y sección, o avísale a tu docente.</div>`;
   document.getElementById('btn-comenzar').style.display = 'none';
 }
 
 function rehacerLookup() {
-  S._nombreConfirmado = null;
+  S._nombreConfirmado = null; S._claveEstudiante = null;
   document.getElementById('r-orden').value = '';
   document.getElementById('r-seccion').value = '';
   document.getElementById('nombre-lookup').style.display = 'none';
@@ -354,11 +420,37 @@ function mostrarComprobante(nombre, grado, seccion, orden, codigo, tituloExamen)
   </div>`;
 }
 
-function entrarAlExamen() {
+async function entrarAlExamen() {
+  S.cambiosPestana = 0;
+  S._sesionToken = generarToken();
+  // Verificar sesión única — si hay sesión activa con otro token, bloquear
+  try {
+    var { data: sesData } = await sb.rpc('public_iniciar_sesion', {
+      p_examen_id: S.examen.id,
+      p_numero_orden: S.est.numero_orden,
+      p_seccion: S.est.seccion,
+      p_token: S._sesionToken
+    });
+    if (sesData && sesData.ok === false) {
+      document.getElementById('app').innerHTML = `
+        <div style="max-width:400px;margin:80px auto;padding:24px;background:#fff;border-radius:12px;border:1px solid var(--brd);text-align:center">
+          <div style="font-size:36px;margin-bottom:12px">🔒</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:8px">Sesión activa detectada</div>
+          <div style="font-size:14px;color:#555;margin-bottom:20px">Ya existe una sesión activa para este estudiante. Si eres tú, espera 2 minutos e intenta de nuevo.</div>
+          <button class="btn btn-primary" onclick="location.reload()">Reintentar</button>
+        </div>`;
+      return;
+    }
+  } catch(e) { /* RPC no disponible — continuar sin sesión única */ }
+  document.addEventListener('visibilitychange', _onVisibilityChange);
   S.view = 'examen'; S.currentQ = 0;
   (S.examen.preguntas || []).forEach((q, i) => { if (q.tipo === 'ordenar') { S.ordenItems[i] = [...q.items]; S.resp[i] = [...q.items]; } });
   render();
   if (S.examen.tiempo_minutos > 0) startTimer(S.examen.tiempo_minutos);
+}
+
+function _onVisibilityChange() {
+  if (document.hidden) S.cambiosPestana = (S.cambiosPestana || 0) + 1;
 }
 
 // ── Examen ────────────────────────────────────────────────────
@@ -602,6 +694,15 @@ async function submitExamen(auto) {
   });
   if (!error && rpcData?.error) { toast('No se pudo enviar: ' + rpcData.error, 4000); return; }
   if (error) { toast('Error al guardar: ' + error.message, 4000); return; }
+  document.removeEventListener('visibilitychange', _onVisibilityChange);
+  if (S._sesionToken) {
+    sb.rpc('public_finalizar_sesion', { p_token: S._sesionToken }).catch(function() {});
+    S._sesionToken = null;
+  }
+  if (S.cambiosPestana > 0) {
+    var respId = rpcData?.id || null;
+    sb.rpc('public_registrar_cambios_pestana', { p_respuesta_id: respId, p_cambios: S.cambiosPestana }).catch(function() {});
+  }
   S.view = 'enviado'; render();
 }
 

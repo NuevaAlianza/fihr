@@ -19,15 +19,33 @@ function renderAdminLogin() {
 }
 
 async function checkPin() {
+  var LS_KEY = 'admin_login_attempts';
+  var now = Date.now();
+  var stored = JSON.parse(localStorage.getItem(LS_KEY) || '{"count":0,"blockedUntil":0}');
+  if (stored.blockedUntil > now) {
+    var secsLeft = Math.ceil((stored.blockedUntil - now) / 1000);
+    toast('Demasiados intentos. Espera ' + secsLeft + ' segundos.', 3500);
+    return;
+  }
   var pin = document.getElementById('pin-in').value;
   var hash = await sha256(pin);
   var { data } = await sb.from('admin_config').select('pin_hash').single();
   if (data && data.pin_hash === hash) {
+    localStorage.removeItem(LS_KEY);
     S.adminAuth = true; S.pinHash = hash;
     document.getElementById('btn-admin').textContent = 'Salir';
     document.getElementById('btn-admin').onclick = adminLogout;
     S.view = 'admin'; render();
-  } else { toast('PIN incorrecto'); }
+  } else {
+    var count = (stored.count || 0) + 1;
+    var blockedUntil = count >= 5 ? now + 30000 : 0;
+    localStorage.setItem(LS_KEY, JSON.stringify({ count, blockedUntil }));
+    if (blockedUntil) {
+      toast('Demasiados intentos. Bloqueado 30 segundos.', 4000);
+    } else {
+      toast('PIN incorrecto — ' + (5 - count) + ' intento(s) restante(s)');
+    }
+  }
 }
 
 function adminLogout() {
@@ -170,13 +188,25 @@ async function buildListaTab() {
   else {
     Object.values(grupos).forEach(g => {
       html += `<div style="margin-bottom:16px">
-        <div style="font-weight:700;font-size:13px;color:var(--az);margin-bottom:6px">${g.grado} — Sección ${g.seccion} <span class="badge badge-gray">${g.items.length}</span>
-          <button class="btn btn-xs btn-danger" style="margin-left:8px" onclick="borrarSeccion('${g.grado}','${g.seccion}')">Borrar sección</button>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+          <span style="font-weight:700;font-size:13px;color:var(--az)">${g.grado} — Sección ${g.seccion}</span>
+          <span class="badge badge-gray">${g.items.length}</span>
+          <button class="btn btn-xs btn-outline" onclick="generarClavesGrupo('${g.grado}','${g.seccion}')">🔑 Generar claves</button>
+          <button class="btn btn-xs btn-gray" onclick="exportarListaConClaves('${g.grado}','${g.seccion}')">↓ Excel claves</button>
+          <button class="btn btn-xs btn-danger" style="margin-left:auto" onclick="borrarSeccion('${g.grado}','${g.seccion}')">Borrar sección</button>
         </div>
-        <table class="est-table"><thead><tr><th>#</th><th>Nombre</th><th></th></tr></thead><tbody>
-        ${g.items.map(e=>`<tr><td>${e.numero_orden}</td><td>${esc(e.nombre)}</td><td>
-          <button class="btn btn-xs" style="background:var(--ro2);color:var(--ro);border:none;cursor:pointer;border-radius:4px" onclick="borrarEstudiante('${e.id}')">✕</button>
-        </td></tr>`).join('')}
+        <table class="est-table"><thead><tr><th>#</th><th>Nombre</th><th>Clave</th><th></th></tr></thead><tbody>
+        ${g.items.map(e => {
+          var claveHtml = e.clave
+            ? `<span style="font-family:monospace;font-weight:700;letter-spacing:2px;color:#1B3A6B;font-size:12px">${esc(e.clave)}</span>
+               <button class="btn btn-xs btn-gray" style="margin-left:4px" onclick="editarClave('${e.id}','${esc(e.clave).replace(/'/g,"\\'")}')">✏</button>`
+            : `<button class="btn btn-xs btn-outline" onclick="editarClave('${e.id}','')">+ Clave</button>`;
+          return `<tr>
+            <td>${e.numero_orden}</td><td>${esc(e.nombre)}</td>
+            <td id="clave_td_${e.id}">${claveHtml}</td>
+            <td><button class="btn btn-xs" style="background:var(--ro2);color:var(--ro);border:none;cursor:pointer;border-radius:4px" onclick="borrarEstudiante('${e.id}')">✕</button></td>
+          </tr>`;
+        }).join('')}
         </tbody></table></div>`;
     });
   }
@@ -280,6 +310,7 @@ function renderAdminResp() {
       <button class="btn btn-success btn-sm" onclick="descargarExcel()">Descargar Excel</button>
       <button class="btn btn-outline btn-sm" onclick="exportarWord()">Exportar Word</button>
       <button class="btn btn-gray btn-sm" onclick="verIntentos('${ex.id}')">👁 Ver intentos</button>
+      <button class="btn btn-gray btn-sm" onclick="limpiarSesiones('${ex.id}')">🔒 Limpiar sesiones</button>
       ${resps.length>0?`<button class="btn btn-warn btn-sm" onclick="archivarRespuestas()">Archivar y limpiar</button>`:''}
     </div>
     ${ex.rubrica_txt?`<div class="info-box" style="margin-bottom:10px"><strong>Rúbrica:</strong> ${esc(ex.rubrica_txt)}</div>`:''}
@@ -301,6 +332,7 @@ function renderAdminResp() {
     html += `<tr style="background:${bgRow}">
       <td style="padding:7px;font-weight:700">${esc(r.nombre)}
         ${pendiente?`<button class="btn btn-xs" style="background:#FFF3E0;color:#E65100;border:none;cursor:pointer;border-radius:4px;font-size:11px;margin-left:4px" onclick="revisarTexto('${r.id}')">Revisar</button>`:''}
+        ${r.cambios_pestana > 0 ? `<span class="badge badge-am" style="margin-left:4px;font-size:10px" title="Cambió de pestaña ${r.cambios_pestana} veces">⚠️ ${r.cambios_pestana}×</span>` : ''}
       </td>
       <td style="padding:7px;text-align:center">${r.numero_orden}</td>
       <td style="padding:7px;text-align:center">${esc(r.seccion)}</td>
@@ -769,4 +801,63 @@ function copiarEstructuraJSON() {
       if (btn) { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }
     }, 2000);
   }).catch(function() { toast('No se pudo copiar al portapapeles', 3000); });
+}
+
+// ── Claves individuales ───────────────────────────────────────
+function _genClave() {
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length: 6}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+async function generarClavesGrupo(grado, seccion) {
+  var sinClave = S.listaEst.filter(e => e.grado === grado && e.seccion === seccion && !e.clave);
+  if (!sinClave.length) { toast('Todos ya tienen clave en ' + grado + '-' + seccion); return; }
+  if (!confirm('¿Generar claves para ' + sinClave.length + ' estudiante(s) de ' + grado + ' sección ' + seccion + '?')) return;
+  var filas = sinClave.map(e => ({ id: e.id, clave: _genClave() }));
+  var { error } = await rpcAdmin('admin_actualizar_claves', { p_filas: filas });
+  if (error) { toast('Error al generar claves: ' + error.message, 4000); return; }
+  toast(filas.length + ' clave(s) generadas');
+  S.adminTab = 'lista'; renderAdmin();
+}
+
+function exportarListaConClaves(grado, seccion) {
+  var items = S.listaEst.filter(e => e.grado === grado && e.seccion === seccion)
+    .sort((a, b) => a.numero_orden - b.numero_orden);
+  if (!items.length) { toast('Sin estudiantes en este grupo'); return; }
+  var wb = XLSX.utils.book_new();
+  var rows = [['#', 'Nombre', 'Clave'], ...items.map(e => [e.numero_orden, e.nombre, e.clave || ''])];
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:5}, {wch:35}, {wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws, (grado + '-' + seccion).replace(/[^a-zA-Z0-9-]/g, ''));
+  XLSX.writeFile(wb, 'claves_' + grado + '_sec' + seccion + '_' + new Date().toISOString().substring(0,10) + '.xlsx');
+  toast('Lista con claves descargada');
+}
+
+function editarClave(id, claveActual) {
+  var td = document.getElementById('clave_td_' + id);
+  if (!td) return;
+  td.innerHTML = `
+    <input type="text" id="ci_${id}" value="${esc(claveActual)}" maxlength="8" placeholder="------"
+      style="width:80px;font-size:13px;font-family:monospace;text-transform:uppercase;letter-spacing:1px;padding:3px 6px;border:1.5px solid var(--az);border-radius:4px"
+      onkeydown="if(event.key==='Enter')guardarClave('${id}',this.value)">
+    <button class="btn btn-xs btn-primary" style="margin-left:4px" onclick="guardarClave('${id}',document.getElementById('ci_${id}').value)">✓</button>
+    <button class="btn btn-xs btn-gray" onclick="S.adminTab='lista';renderAdmin()">✗</button>`;
+  var inp = document.getElementById('ci_' + id);
+  if (inp) { inp.focus(); inp.select(); }
+}
+
+async function guardarClave(id, clave) {
+  clave = (clave || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 8);
+  var { error } = await rpcAdmin('admin_actualizar_clave', { p_id: id, p_clave: clave || null });
+  if (error) { toast('Error: ' + error.message); return; }
+  toast(clave ? 'Clave guardada: ' + clave : 'Clave eliminada');
+  S.adminTab = 'lista'; renderAdmin();
+}
+
+// ── Sesiones activas ──────────────────────────────────────────
+async function limpiarSesiones(examenId) {
+  if (!confirm('¿Limpiar todas las sesiones activas de este examen?\nEstudiantes con sesión abierta podrán entrar de nuevo.')) return;
+  var { error } = await rpcAdmin('admin_limpiar_sesiones', { p_examen_id: examenId });
+  if (error) { toast('Error: ' + error.message, 4000); return; }
+  toast('Sesiones limpiadas');
 }
