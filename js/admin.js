@@ -81,7 +81,7 @@ async function buildExamenesTab() {
     </div>`;
   if (!S.examenes.length) { html += '<p style="color:var(--sub);text-align:center;padding:24px">Sin exámenes todavía.</p>'; }
   else {
-    ['2do','4to','5to','6to'].forEach(grado => {
+    GRADOS_CONFIG.filter(g => g.disponible).map(g => g.nivel).forEach(grado => {
       var exs = porGrado[grado] || [];
       if (!exs.length) return;
       var gc = GRADOS_CONFIG.find(g => g.nivel === grado) || {};
@@ -209,7 +209,7 @@ async function guardarEstudiante() {
   var grado = document.getElementById('ae-grado').value, seccion = document.getElementById('ae-sec').value;
   var orden = parseInt(document.getElementById('ae-num').value)||0, nombre = document.getElementById('ae-nombre').value.trim();
   if (!nombre||orden<1) { toast('Completa todos los campos'); return; }
-  var { error } = await rpcAdmin('admin_upsert_estudiantes', { p_filas: [{grado,seccion,numero_orden:orden,nombre}] });
+  var { error } = await rpcAdmin('admin_upsert_estudiantes', { p_filas: [{grado,seccion,numero_orden:orden,nombre,activo:true}] });
   if (error) { toast('Error: '+error.message); return; }
   toast('Estudiante guardado'); document.getElementById('add-est-area').style.display = 'none';
   S.adminTab = 'lista'; renderAdmin();
@@ -347,7 +347,7 @@ async function revisarTexto(respId) {
     </div>`;
   });
   html += `<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
-      <div id="revision-error" style="display:none" class="warn-box" style="flex:1"></div>
+      <div id="revision-error" style="display:none;flex:1" class="warn-box"></div>
       <button class="btn btn-outline" onclick="cerrarRevision()">Cancelar</button>
       <button class="btn btn-primary" onclick="guardarRevision('${respId}',${JSON.stringify(pendientes.map(d=>d.qi))})">Guardar notas</button>
     </div></div></div>`;
@@ -386,17 +386,17 @@ function descargarExcel() {
   var ex = S.adminExamen, qs = ex.preguntas||[], resps = S.respuestas;
   var wb = XLSX.utils.book_new();
   var h1 = ['Nombre','Orden','Seccion','Grado','Pts Auto','Pts Texto','Pts Total','Maximo','%','Revisado','Tiempo(seg)','Enviado'];
-  qs.forEach((q,i) => h1.push('P'+(i+1)+' ['+q.tipo+']('+q.puntos+'pts): '+(q.texto||'').substring(0,35)));
+  qs.forEach((q,i) => { if (q.tipo !== 'lectura') h1.push('P'+(i+1)+' ['+q.tipo+']('+q.puntos+'pts): '+(q.texto||'').substring(0,35)); });
   var rows = [h1];
   resps.forEach(r => {
     var pct = (r.puntos_maximo&&r.puntos_total!=null)?Math.round(r.puntos_total/r.puntos_maximo*100)+'%':'—';
     var row = [r.nombre,r.numero_orden,r.seccion,r.grado,r.puntos_auto??'—',r.puntos_texto??'—',r.puntos_total??'—',r.puntos_maximo??'—',pct,r.texto_revisado?'Si':'Pendiente',r.tiempo_usado_seg||0,(r.submitted_at||'').substring(0,16)];
-    qs.forEach((_, qi) => { var v = r.respuestas[qi]; row.push(v===undefined?'':(typeof v==='object'?JSON.stringify(v):String(v))); });
+    qs.forEach((q, qi) => { if (q.tipo === 'lectura') return; var v = r.respuestas[qi]; row.push(v===undefined?'':(typeof v==='object'?JSON.stringify(v):String(v))); });
     rows.push(row);
   });
   var ws1 = XLSX.utils.aoa_to_sheet(rows); ws1['!cols'] = h1.map((_,i) => ({wch:i<6?16:45}));
   XLSX.utils.book_append_sheet(wb, ws1, 'Respuestas');
-  var rub = [['#','Tipo','Pregunta','Puntos','Criterios'], ...qs.map((q,i) => [i+1,q.tipo,q.texto||'',q.puntos||0,q.rubrica||(q.tipo==='vf'?'Correcta: '+q.correcta:q.tipo==='multiple'?'Correcta: '+q.correcta:'—')])];
+  var rub = [['#','Tipo','Pregunta','Puntos','Criterios'], ...qs.filter(q => q.tipo !== 'lectura').map((q,i) => [i+1,q.tipo,q.texto||'',q.puntos||0,q.rubrica||(q.tipo==='vf'?'Correcta: '+q.correcta:q.tipo==='multiple'?'Correcta: '+q.correcta:'—')])];
   var ws2 = XLSX.utils.aoa_to_sheet(rub); ws2['!cols'] = [{wch:4},{wch:14},{wch:50},{wch:8},{wch:60}];
   XLSX.utils.book_append_sheet(wb, ws2, 'Rubrica');
   XLSX.writeFile(wb, ex.titulo+'_'+ex.grado+'_P'+ex.periodo+'_'+new Date().toISOString().substring(0,10)+'.xlsx');
@@ -531,6 +531,9 @@ async function procesarImportJSON() {
   if (!txt) { toast('Pega el JSON del examen'); return; }
   var data; try { data = JSON.parse(txt); } catch(e) { toast('JSON inválido: '+e.message,4000); return; }
   if (!data.titulo||!Array.isArray(data.preguntas)) { toast('El JSON necesita titulo + preguntas'); return; }
+  var TIPOS_VALIDOS = ['multiple','texto','vf','completar','ordenar','escala','lectura'];
+  var qs_invalidas = data.preguntas.filter(q => !q.tipo || !TIPOS_VALIDOS.includes(q.tipo));
+  if (qs_invalidas.length) { toast('Tipo inválido en pregunta(s): ' + qs_invalidas.map(q => '"'+(q.tipo||'sin tipo')+'"').join(', '), 5000); return; }
   var payload = { titulo:data.titulo, descripcion:data.descripcion||'', grado:data.grado||'', periodo:parseInt(data.periodo)||0, tiempo_minutos:parseInt(data.tiempo_minutos)||0, instrucciones:data.instrucciones||'', rubrica_txt:data.rubrica_txt||'', preguntas:data.preguntas, secciones_activas:data.secciones_activas||[], validar_lista:data.validar_lista||false, activo:false, updated_at:new Date().toISOString() };
   var { error } = await rpcAdmin('admin_upsert_examen', { p_id:null, p_datos:payload });
   if (error) { toast('Error al importar: '+error.message,4000); return; }
@@ -542,7 +545,7 @@ async function procesarImportJSON() {
 
 function exportarWord() {
   var ex = S.adminExamen, qs = ex.preguntas||[];
-  var TIPO = {multiple:'Opción múltiple',texto:'Respuesta abierta',vf:'Verdadero/Falso',completar:'Completar',ordenar:'Ordenar',escala:'Escala 1-5'};
+  var TIPO = {multiple:'Opción múltiple',texto:'Respuesta abierta',vf:'Verdadero/Falso',completar:'Completar',ordenar:'Ordenar',escala:'Escala 1-5',lectura:'Lectura / Contexto'};
   var L = ['A','B','C','D']; var doc = '';
   doc += 'EXAMEN\n'+ex.titulo+'\n'+ex.grado+' | Período '+ex.periodo+(ex.tiempo_minutos>0?' | '+ex.tiempo_minutos+' min':'')+'\n\n';
   doc += 'Nombre: ___________________________________\nNúmero: _____ Sección: _____ Fecha: _____________\n\n';
@@ -550,6 +553,7 @@ function exportarWord() {
   doc += '='.repeat(60)+'\n\n';
   var totalPts = 0;
   qs.forEach((q,i) => {
+    if (q.tipo === 'lectura') return;
     totalPts += q.puntos||0;
     doc += (i+1)+'. ['+TIPO[q.tipo]+' | '+(q.puntos||0)+' pts]\n'+q.texto+'\n\n';
     if (q.tipo==='multiple') (q.opciones||[]).forEach((op,oi) => { doc += '   ('+L[oi]+') '+op+'\n'; });

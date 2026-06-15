@@ -31,10 +31,10 @@ function renderSelector() {
     </button>
   </div>`;
   // Banner PWA
-  html += `<div id="pwa-banner" style="display:none;background:var(--az);color:#fff;border-radius:10px;padding:12px 14px;margin-top:12px;align-items:center;gap:10px">
+  html += `<div id="pwa-banner" class="hidden" style="display:flex;background:var(--az);color:#fff;border-radius:10px;padding:12px 14px;margin-top:12px;align-items:center;gap:10px">
     <span style="flex:1;font-size:13px">📲 Instala la app para acceso rápido sin internet</span>
     <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="instalarPWA()">Instalar</button>
-    <button onclick="document.getElementById('pwa-banner').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:18px">✕</button>
+    <button onclick="document.getElementById('pwa-banner').classList.add('hidden')" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:18px">✕</button>
   </div>`;
   html += '</div>';
   document.getElementById('main-content').innerHTML = html;
@@ -98,7 +98,7 @@ async function renderInicio() {
 async function iniciarExamen(id) {
   var { data, error } = await sb.from('examenes').select('*').eq('id', id).single();
   if (error || !data || !data.activo) { toast('Examen no disponible'); return; }
-  S.examen = data; S.resp = {}; S.ordenItems = {};
+  S.examen = data; S.resp = {}; S.ordenItems = {}; S._nombreConfirmado = null;
   S.view = 'registro'; render();
 }
 
@@ -356,7 +356,7 @@ function mostrarComprobante(nombre, grado, seccion, orden, codigo, tituloExamen)
 
 function entrarAlExamen() {
   S.view = 'examen'; S.currentQ = 0;
-  (S.examen.preguntas || []).forEach((q, i) => { if (q.tipo === 'ordenar') S.ordenItems[i] = [...q.items]; });
+  (S.examen.preguntas || []).forEach((q, i) => { if (q.tipo === 'ordenar') { S.ordenItems[i] = [...q.items]; S.resp[i] = [...q.items]; } });
   render();
   if (S.examen.tiempo_minutos > 0) startTimer(S.examen.tiempo_minutos);
 }
@@ -552,7 +552,7 @@ function calcularNota(examen, respuestas) {
       case 'completar':
         item.auto = true;
         var correctBlanks = q.respuestas || [];
-        if (!correctBlanks.length) { item.pts = pts; break; }
+        if (!correctBlanks.length) { item.pts = 0; break; }
         var studentBlanks = (resp && typeof resp==='object') ? resp : {};
         var blancoCorrectos = 0;
         correctBlanks.forEach((correct, bi) => {

@@ -943,6 +943,9 @@ textarea { resize: vertical; min-height: 84px; }
 }
 #pwa-banner.show { display: flex; }
 
+/* ── UTILITY ─────────────────────────────────────────────────── */
+.hidden { display: none !important; }
+
 /* ── RESPONSIVE ──────────────────────────────────────────────── */
 @media(max-width: 600px) {
   .main { padding: 16px 12px; }

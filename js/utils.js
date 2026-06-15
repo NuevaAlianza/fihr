@@ -65,6 +65,7 @@ function normalizeName(s) {
 function nameMatch(dbName, inputName) {
   var dbWords = normalizeName(dbName).split(' ').filter(w => w.length > 2);
   var inWords = normalizeName(inputName).split(' ').filter(w => w.length > 2);
+  if (!inWords.length) return false;
   var matches = inWords.filter(w => dbWords.some(d => d.startsWith(w) || w.startsWith(d)));
   return matches.length >= Math.min(2, inWords.length);
 }
@@ -94,7 +95,7 @@ window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _deferredInstall = e;
   var banner = document.getElementById('pwa-banner');
-  if (banner) banner.classList.add('show');
+  if (banner) banner.classList.remove('hidden');
 });
 
 function instalarPWA() {
@@ -103,7 +104,7 @@ function instalarPWA() {
   _deferredInstall.userChoice.then(() => {
     _deferredInstall = null;
     var banner = document.getElementById('pwa-banner');
-    if (banner) banner.classList.remove('show');
+    if (banner) banner.classList.add('hidden');
   });
 }
 
