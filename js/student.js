@@ -717,12 +717,12 @@ async function submitExamen(auto) {
   try { sessionStorage.removeItem('sca_resp_backup'); } catch(e) {}
   document.removeEventListener('visibilitychange', _onVisibilityChange);
   if (S._sesionToken) {
-    sb.rpc('public_finalizar_sesion', { p_token: S._sesionToken }).catch(function() {});
-    S._sesionToken = null;
+    var token = S._sesionToken; S._sesionToken = null;
+    (async function() { try { await sb.rpc('public_finalizar_sesion', { p_token: token }); } catch(e) {} })();
   }
   if (S.cambiosPestana > 0) {
     var respId = rpcData?.id || null;
-    sb.rpc('public_registrar_cambios_pestana', { p_respuesta_id: respId, p_cambios: S.cambiosPestana }).catch(function() {});
+    (async function() { try { await sb.rpc('public_registrar_cambios_pestana', { p_respuesta_id: respId, p_cambios: S.cambiosPestana }); } catch(e) {} })();
   }
   S.view = 'enviado'; render();
 }
