@@ -690,24 +690,30 @@ async function submitExamen(auto) {
   stopTimer();
 
   // Calificación server-side — el cliente no tiene las respuestas correctas
-  var { data: calData, error: calError } = await sb.rpc('public_calificar_respuesta', {
-    p_examen_id: S.examen.id,
-    p_respuestas: S.resp
-  });
+  var calData, calError;
+  try {
+    ({ data: calData, error: calError } = await sb.rpc('public_calificar_respuesta', {
+      p_examen_id: S.examen.id,
+      p_respuestas: S.resp
+    }));
+  } catch(e) { calError = e; }
   if (calError || !calData || !calData.ok) {
     _mostrarRetrySubmit((calError?.message) || (calData?.error) || 'Error al calificar');
     return;
   }
 
-  var { data: rpcData, error } = await sb.rpc('public_enviar_respuesta', {
-    p_examen_id: S.examen.id, p_nombre: S.est.nombre,
-    p_numero_orden: parseInt(S.est.orden)||0, p_grado: S.est.grado, p_seccion: S.est.seccion,
-    p_respuestas: S.resp, p_tiempo_seg: tiempoUsado(),
-    p_puntos_auto: calData.pts_auto, p_puntos_maximo: calData.pts_max,
-    p_detalle_notas: calData.detalle, p_tiene_texto: calData.tiene_texto
-  });
+  var rpcData, error;
+  try {
+    ({ data: rpcData, error } = await sb.rpc('public_enviar_respuesta', {
+      p_examen_id: S.examen.id, p_nombre: S.est.nombre,
+      p_numero_orden: parseInt(S.est.orden)||0, p_grado: S.est.grado, p_seccion: S.est.seccion,
+      p_respuestas: S.resp, p_tiempo_seg: tiempoUsado(),
+      p_puntos_auto: calData.pts_auto, p_puntos_maximo: calData.pts_max,
+      p_detalle_notas: calData.detalle, p_tiene_texto: calData.tiene_texto
+    }));
+  } catch(e) { error = e; }
   if (!error && rpcData?.error) { toast('No se pudo enviar: ' + rpcData.error, 4000); return; }
-  if (error) { _mostrarRetrySubmit(error.message); return; }
+  if (error) { _mostrarRetrySubmit(error?.message || 'Error de red'); return; }
   try { sessionStorage.removeItem('sca_resp_backup'); } catch(e) {}
   document.removeEventListener('visibilitychange', _onVisibilityChange);
   if (S._sesionToken) {

@@ -445,7 +445,7 @@ async function archivarRespuestas() {
 
 // ── Crear / Editar examen ─────────────────────────────────────
 function renderAdminCrear() {
-  var ex = S.adminExamen, GRADOS = ['2do','4to','5to','6to'], secs = ex?.secciones_activas||[];
+  var ex = S.adminExamen, GRADOS = GRADOS_CONFIG.filter(g => g.disponible).map(g => g.nivel), secs = ex?.secciones_activas||[];
   var html = `<div class="card">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
       <button class="btn btn-outline btn-sm" onclick="S.view='admin';S.qBuilders=[];render()">&#8592; Volver</button>
