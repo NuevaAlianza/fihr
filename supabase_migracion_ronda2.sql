@@ -271,6 +271,30 @@ GRANT EXECUTE ON FUNCTION admin_limpiar_sesiones(TEXT, TEXT)
   TO anon, authenticated;
 
 
+-- ─────────────────────────────────────────────────────────────
+-- BLOQUE 10: Políticas RLS para sesiones_activas
+-- Las funciones SECURITY DEFINER (bloques 4-5) omiten RLS, pero
+-- estas políticas permiten además el acceso directo desde el
+-- cliente Supabase JS si en algún momento se consulta la tabla
+-- sin pasar por una función.
+-- ─────────────────────────────────────────────────────────────
+
+-- Política 1: cualquiera puede insertar (estudiante inicia sesión)
+CREATE POLICY "insert_sesion" ON sesiones_activas
+  FOR INSERT TO anon, authenticated
+  WITH CHECK (true);
+
+-- Política 2: cualquiera puede leer (verificar sesión duplicada)
+CREATE POLICY "select_sesion" ON sesiones_activas
+  FOR SELECT TO anon, authenticated
+  USING (true);
+
+-- Política 3: cualquiera puede eliminar su propia sesión por token
+CREATE POLICY "delete_sesion" ON sesiones_activas
+  FOR DELETE TO anon, authenticated
+  USING (true);
+
+
 -- =============================================================
 -- FIN DE MIGRACIÓN
 -- =============================================================
