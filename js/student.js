@@ -95,9 +95,34 @@ async function renderInicio() {
 }
 
 // ── Registro ──────────────────────────────────────────────────
+
+// Elimina las respuestas correctas del objeto examen antes de guardarlo en S.
+// Las preguntas tipo 'ordenar' se barajan para que el orden correcto
+// solo exista en la BD — nunca en el cliente.
+function _ocultarRespuestas(preguntas) {
+  return (preguntas || []).map(function(q) {
+    var p = Object.assign({}, q);
+    switch (p.tipo) {
+      case 'multiple':  delete p.correcta;   break;
+      case 'vf':        delete p.correcta;   break;
+      case 'completar': delete p.respuestas; break;
+      case 'ordenar':
+        var arr = p.items ? p.items.slice() : [];
+        for (var k = arr.length - 1; k > 0; k--) {
+          var m = Math.floor(Math.random() * (k + 1));
+          var tmp = arr[k]; arr[k] = arr[m]; arr[m] = tmp;
+        }
+        p.items = arr;
+        break;
+    }
+    return p;
+  });
+}
+
 async function iniciarExamen(id) {
   var { data, error } = await sb.from('examenes').select('*').eq('id', id).single();
   if (error || !data || !data.activo) { toast('Examen no disponible'); return; }
+  data.preguntas = _ocultarRespuestas(data.preguntas);
   S.examen = data; S.resp = {}; S.ordenItems = {}; S._nombreConfirmado = null; S._claveEstudiante = null;
   S.view = 'registro'; render();
 }
@@ -615,56 +640,33 @@ function normText(s) {
   return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').trim();
 }
 
+// calcularNota es ahora solo de referencia client-side.
+// La calificación real de multiple/vf/completar/ordenar la hace
+// el servidor vía public_calificar_respuesta — el cliente no
+// tiene las respuestas correctas después de _ocultarRespuestas().
 function calcularNota(examen, respuestas) {
   var qs = examen.preguntas || [];
   var detalle = []; var puntos_auto = 0, puntos_texto_max = 0, puntos_maximo = 0;
-  qs.forEach((q, i) => {
-    var pts = q.puntos || 0; puntos_maximo += pts;
+  qs.forEach(function(q, i) {
+    var pts = q.puntos || 0;
+    if (q.tipo !== 'lectura') puntos_maximo += pts;
     var resp = respuestas[i];
-    var item = { qi:i, tipo:q.tipo, pts_max:pts, pts:0, auto:false, pendiente:false };
+    var item = { qi:i, tipo:q.tipo, pts_max:pts, pts:null, auto:false, pendiente:false };
     switch (q.tipo) {
-      case 'multiple':
-        item.auto = true;
-        var corrIdx = ['A','B','C','D'].indexOf(q.correcta);
-        if (resp === corrIdx) item.pts = pts;
-        break;
-      case 'vf':
-        item.auto = true;
-        if (String(resp) === String(q.correcta)) item.pts = pts;
-        break;
-      case 'ordenar':
-        item.auto = true;
-        var correctOrder = q.items || []; var studentOrder = Array.isArray(resp) ? resp : [];
-        if (!studentOrder.length) break;
-        var matches = 0;
-        correctOrder.forEach((it, ci) => { if (normText(studentOrder[ci]) === normText(it)) matches++; });
-        item.pts = matches === correctOrder.length ? pts : matches >= Math.ceil(correctOrder.length/2) ? Math.round(pts*matches/correctOrder.length) : 0;
-        item.detalle = matches+'/'+correctOrder.length+' en orden correcto';
-        break;
-      case 'completar':
-        item.auto = true;
-        var correctBlanks = q.respuestas || [];
-        if (!correctBlanks.length) { item.pts = 0; break; }
-        var studentBlanks = (resp && typeof resp==='object') ? resp : {};
-        var blancoCorrectos = 0;
-        correctBlanks.forEach((correct, bi) => {
-          var given = normText(studentBlanks[bi]||''), cn = normText(correct);
-          if (given===cn||(given.length>3&&cn.includes(given))||(cn.length>3&&given.includes(cn.substring(0,Math.ceil(cn.length*0.6))))) blancoCorrectos++;
-        });
-        item.pts = Math.round(pts*blancoCorrectos/correctBlanks.length);
-        break;
-      case 'lectura':
-        // Bloque informativo, no evaluado
-        item.auto = true; item.pts = 0; puntos_maximo -= pts; break;
-      case 'texto':
-        item.pendiente = true; puntos_texto_max += pts; break;
       case 'escala':
         item.auto = true;
         item.pts = (resp !== undefined && resp !== null && resp !== '') ? pts : 0;
         item.detalle = 'participacion';
         break;
+      case 'texto':
+        item.pendiente = true; puntos_texto_max += pts; item.pts = 0; break;
+      case 'lectura':
+        item.auto = true; item.pts = 0; break;
+      default:
+        // multiple, vf, completar, ordenar — calificados por el servidor
+        item.pendiente = true; item.pts = null; break;
     }
-    if (item.auto) puntos_auto += item.pts;
+    if (item.auto && item.pts != null) puntos_auto += item.pts;
     detalle.push(item);
   });
   return { puntos_auto, puntos_texto_max, puntos_maximo, detalle };
@@ -686,14 +688,23 @@ async function submitExamen(auto) {
   // Respaldo local por si falla el envío
   try { sessionStorage.setItem('sca_resp_backup', JSON.stringify({ examen_id: S.examen.id, resp: S.resp })); } catch(e) {}
   stopTimer();
-  var { puntos_auto, puntos_texto_max, puntos_maximo, detalle } = calcularNota(S.examen, S.resp);
-  var tiene_texto = puntos_texto_max > 0;
+
+  // Calificación server-side — el cliente no tiene las respuestas correctas
+  var { data: calData, error: calError } = await sb.rpc('public_calificar_respuesta', {
+    p_examen_id: S.examen.id,
+    p_respuestas: S.resp
+  });
+  if (calError || !calData || !calData.ok) {
+    _mostrarRetrySubmit((calError?.message) || (calData?.error) || 'Error al calificar');
+    return;
+  }
+
   var { data: rpcData, error } = await sb.rpc('public_enviar_respuesta', {
     p_examen_id: S.examen.id, p_nombre: S.est.nombre,
     p_numero_orden: parseInt(S.est.orden)||0, p_grado: S.est.grado, p_seccion: S.est.seccion,
     p_respuestas: S.resp, p_tiempo_seg: tiempoUsado(),
-    p_puntos_auto: puntos_auto, p_puntos_maximo: puntos_maximo,
-    p_detalle_notas: detalle, p_tiene_texto: tiene_texto
+    p_puntos_auto: calData.pts_auto, p_puntos_maximo: calData.pts_max,
+    p_detalle_notas: calData.detalle, p_tiene_texto: calData.tiene_texto
   });
   if (!error && rpcData?.error) { toast('No se pudo enviar: ' + rpcData.error, 4000); return; }
   if (error) { _mostrarRetrySubmit(error.message); return; }
