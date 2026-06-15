@@ -370,8 +370,117 @@ Hay un problema conceptual: `'./'` y `'./index.html'` probablemente resuelven al
 | Gaps de PWA | 6 | MEDIO |
 
 **Prioridad inmediata antes del próximo examen:**
-1. Verificar que las respuestas correctas no sean accesibles vía consola (P1 — o al menos alertar al equipo)
-2. Corregir BUG-01 (ordenar sin arrastrar → 0 pts injusto)
-3. Corregir BUG-06 (banner PWA no muestra)
-4. Corregir BUG-11 (Word export crashea con lectura)
-5. Corregir BUG-12 (estudiantes manuales sin `activo: true`)
+1. ~~Verificar que las respuestas correctas no sean accesibles vía consola~~ → **RESUELTO — P1**
+2. ~~Corregir BUG-01 (ordenar sin arrastrar → 0 pts injusto)~~ → **RESUELTO — Ronda 1**
+3. ~~Corregir BUG-06 (banner PWA no muestra)~~ → **RESUELTO — Ronda 1**
+4. ~~Corregir BUG-11 (Word export crashea con lectura)~~ → **RESUELTO — Ronda 1**
+5. ~~Corregir BUG-12 (estudiantes manuales sin `activo: true`)~~ → **RESUELTO — Ronda 1**
+
+---
+
+## P1 — Verificación calificación server-side
+
+**Fecha:** 2026-06-15  
+**Método:** análisis estático de código + comandos de verificación para ejecutar manualmente en consola
+
+> El agente no puede abrir un navegador ni ejecutar JavaScript en la consola.  
+> El servidor local está corriendo en `http://localhost:8080` (iniciado con `python -m http.server 8080`).  
+> Los resultados esperados a continuación se derivan del análisis del código fuente.
+
+---
+
+### Resultado del análisis estático
+
+#### ✅ `_ocultarRespuestas` está correctamente conectado
+
+`js/student.js:125`:
+```js
+data.preguntas = _ocultarRespuestas(data.preguntas);
+S.examen = data;
+```
+La función se llama **antes** de asignar a `S.examen`. No hay ninguna otra ruta de código que asigne `S.examen` sin pasar por esta función.
+
+#### ✅ Campos eliminados por tipo
+
+| Tipo        | Campo eliminado         | Código                    |
+|-------------|-------------------------|---------------------------|
+| `multiple`  | `correcta`              | `delete p.correcta`       |
+| `vf`        | `correcta`              | `delete p.correcta`       |
+| `completar` | `respuestas`            | `delete p.respuestas`     |
+| `ordenar`   | orden correcto en items | Fisher-Yates shuffle sobre `p.items` |
+| `escala`    | —                       | sin cambio (no hay correcta) |
+| `texto`     | —                       | sin cambio (revisión manual) |
+| `lectura`   | —                       | sin cambio (informativo) |
+
+#### ✅ `submitExamen` usa grading del servidor
+
+`js/student.js` — flujo de entrega:
+```
+submitExamen()
+  → public_calificar_respuesta(examen_id, respuestas)   ← servidor tiene las respuestas correctas
+  → si falla: _mostrarRetrySubmit()
+  → public_enviar_respuesta(..., pts_auto, pts_max, detalle, tiene_texto)  ← usa resultado del servidor
+```
+
+#### ✅ `calcularNota()` ya no accede a campos eliminados
+
+La versión simplificada solo procesa `escala` y `texto`. Los tipos `multiple`, `vf`, `completar` y `ordenar` devuelven `pts: null` sin consultar `q.correcta` ni `q.respuestas`.
+
+---
+
+### Verificación manual en consola del navegador
+
+Abrir `http://localhost:8080`, seleccionar un grado con examen activo y hacer clic en "Comenzar". 
+**Antes de presionar "Comenzar examen"** (después de que `iniciarExamen()` haya corrido), ejecutar:
+
+**Paso 1 — Confirmar que los campos correctos fueron eliminados de S:**
+```js
+// Debe mostrar undefined para todas las preguntas de tipo multiple y vf
+S.examen.preguntas
+  .filter(q => q.tipo === 'multiple' || q.tipo === 'vf')
+  .map(q => ({ tipo: q.tipo, texto: q.texto?.substring(0,30), correcta: q.correcta }))
+// Resultado esperado:
+// [{ tipo: 'multiple', texto: '...', correcta: undefined }, ...]
+
+// Debe mostrar undefined para completar
+S.examen.preguntas
+  .filter(q => q.tipo === 'completar')
+  .map(q => ({ tipo: q.tipo, respuestas: q.respuestas }))
+// Resultado esperado:
+// [{ tipo: 'completar', respuestas: undefined }]
+```
+
+**Paso 2 — Confirmar que ordenar fue barajado:**
+```js
+// Los items deben aparecer en orden ALEATORIO (diferente al original en BD)
+S.examen.preguntas
+  .filter(q => q.tipo === 'ordenar')
+  .map(q => q.items)
+// Resultado esperado: array(s) con los items en orden distinto al correcto
+```
+
+**Paso 3 — Confirmar en Network (pestaña Network de DevTools):**
+```
+1. Filtrar por "examenes"
+2. Ver la respuesta del SELECT a Supabase
+3. En el JSON de respuesta: preguntas[i].correcta TIENE valor (ej: "B")
+4. En S.examen.preguntas[i].correcta: undefined
+```
+Esto confirma que Supabase sí envió el campo pero `_ocultarRespuestas` lo eliminó antes de guardarlo en memoria.
+
+**Paso 4 — Confirmar que public_calificar_respuesta se llama al enviar:**
+```js
+// Abrir Network, filtrar por "rpc"
+// Al hacer clic en "Enviar examen":
+// 1. Debe aparecer POST a /rest/v1/rpc/public_calificar_respuesta
+// 2. Seguido de POST a /rest/v1/rpc/public_enviar_respuesta
+// (si la RPC no existe aún en Supabase, aparecerá error 404 — aplicar supabase_p1_calificacion.sql primero)
+```
+
+---
+
+### Pendiente aplicar en Supabase
+
+El archivo `supabase_p1_calificacion.sql` debe ejecutarse en el SQL Editor de Supabase antes de que el flujo de entrega funcione end-to-end. Hasta entonces, `public_calificar_respuesta` devuelve 404 y el estudiante ve la pantalla de retry.
+
+**Estado:** ✅ código cliente verificado | ⏳ migración SQL pendiente de aplicar
