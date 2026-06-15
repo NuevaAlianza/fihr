@@ -160,12 +160,12 @@ GRANT EXECUTE ON FUNCTION public_registrar_cambios_pestana(TEXT, INTEGER)
 -- Llamada desde admin → lista → icono de edición inline.
 -- p_clave = NULL o '' elimina la clave (estudiante sin clave).
 --
--- NOTA: si el PK de estudiantes_lista es UUID en tu proyecto,
--- cambia el tipo de p_id a UUID.
+-- NOTA: si el PK de estudiantes_lista fuera BIGINT en tu proyecto,
+-- cambia el tipo de p_id a BIGINT.
 -- ─────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION admin_actualizar_clave(
   p_pin_hash TEXT,
-  p_id       BIGINT,
+  p_id       UUID,
   p_clave    TEXT
 )
 RETURNS JSONB
@@ -189,7 +189,7 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION admin_actualizar_clave(TEXT, BIGINT, TEXT)
+GRANT EXECUTE ON FUNCTION admin_actualizar_clave(TEXT, UUID, TEXT)
   TO anon, authenticated;
 
 
@@ -199,8 +199,8 @@ GRANT EXECUTE ON FUNCTION admin_actualizar_clave(TEXT, BIGINT, TEXT)
 -- Llamada desde "🔑 Generar claves" en el panel admin.
 -- p_filas es un array JSON: [{"id": 1, "clave": "AB3K9Z"}, ...]
 --
--- NOTA: si el PK de estudiantes_lista es UUID, cambia el cast
--- (v_item->>'id')::BIGINT a (v_item->>'id')::UUID.
+-- NOTA: si el PK de estudiantes_lista fuera BIGINT, cambia el cast
+-- (v_item->>'id')::UUID a (v_item->>'id')::BIGINT.
 -- ─────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION admin_actualizar_claves(
   p_pin_hash TEXT,
@@ -224,7 +224,7 @@ BEGIN
   LOOP
     UPDATE estudiantes_lista
     SET clave = UPPER(TRIM(v_item->>'clave'))
-    WHERE id = (v_item->>'id')::BIGINT;
+    WHERE id = (v_item->>'id')::UUID;
     v_count := v_count + 1;
   END LOOP;
 
