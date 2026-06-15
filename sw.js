@@ -8,7 +8,8 @@ const STATIC = [
   './js/student.js', './js/admin.js', './js/app.js',
   './manifest.json',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './icons/favicon.svg'
 ];
 
 self.addEventListener('install', e => {
