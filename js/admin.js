@@ -41,6 +41,7 @@ async function checkPin() {
 async function adminLogout() {
   if (S.pinHash) { await rpcAdmin('admin_logout', {}); }
   S.adminAuth = false; S.pinHash = null; S.view = 'selector';
+  S._atencion = null; _adminPreloaded = false;
   document.getElementById('btn-admin').textContent = 'Admin';
   document.getElementById('btn-admin').onclick = showAdminLogin;
   render();
@@ -48,24 +49,130 @@ async function adminLogout() {
 
 // ── Panel admin ───────────────────────────────────────────────
 async function renderAdmin() {
+  _preloadAdminGlobals(); // fire-and-forget — se re-renderiza solo cuando llega
+
   var tabContent = '';
   if (S.adminTab === 'examenes')  tabContent = await buildExamenesTab();
   else if (S.adminTab === 'lista') tabContent = await buildListaTab();
   else if (S.adminTab === 'historial') tabContent = await buildHistorialTab();
   else if (S.adminTab === 'buscar') tabContent = await buildBuscarTab();
   else if (S.adminTab === 'informe') tabContent = await buildInformeTab();
-  document.getElementById('main-content').innerHTML = `
-  <div class="card" style="padding-bottom:0">
-    <h2 style="margin:0 0 0 0">Panel de administración</h2>
-    <div class="admin-tabs">
-      <div class="admin-tab${S.adminTab==='examenes'?' active':''}" onclick="S.adminTab='examenes';renderAdmin()">Exámenes</div>
-      <div class="admin-tab${S.adminTab==='lista'?' active':''}" onclick="S.adminTab='lista';renderAdmin()">Lista de estudiantes</div>
-      <div class="admin-tab${S.adminTab==='buscar'?' active':''}" onclick="S.adminTab='buscar';renderAdmin()">Buscar respuestas</div>
-      <div class="admin-tab${S.adminTab==='informe'?' active':''}" onclick="S.adminTab='informe';renderAdmin()">Informe de grado</div>
-      <div class="admin-tab${S.adminTab==='historial'?' active':''}" onclick="S.adminTab='historial';renderAdmin()">Historial archivado</div>
+  document.getElementById('main-content').innerHTML =
+    renderAccesosRapidos() +
+    renderGlobalSearchBar() +
+    renderAtencionBanner() +
+    `<div class="card" style="padding-bottom:0">
+      <h2 style="margin:0 0 0 0">Panel de administración</h2>
+      <div class="admin-tabs">
+        <div class="admin-tab${S.adminTab==='examenes'?' active':''}" onclick="S.adminTab='examenes';renderAdmin()">Exámenes</div>
+        <div class="admin-tab${S.adminTab==='lista'?' active':''}" onclick="S.adminTab='lista';renderAdmin()">Lista de estudiantes</div>
+        <div class="admin-tab${S.adminTab==='buscar'?' active':''}" onclick="S.adminTab='buscar';renderAdmin()">Buscar respuestas</div>
+        <div class="admin-tab${S.adminTab==='informe'?' active':''}" onclick="S.adminTab='informe';renderAdmin()">Informe de grado</div>
+        <div class="admin-tab${S.adminTab==='historial'?' active':''}" onclick="S.adminTab='historial';renderAdmin()">Historial archivado</div>
+      </div>
     </div>
-  </div>
-  <div id="tab-content">${tabContent}</div>`;
+    <div id="tab-content">${tabContent}</div>`;
+}
+
+// ── Precarga en memoria para el buscador global y "Necesita tu atención" ──
+// Se ejecuta una sola vez por sesión de admin — no repite la consulta en
+// cada cambio de pestaña.
+var _adminPreloaded = false;
+async function _preloadAdminGlobals() {
+  if (_adminPreloaded) return;
+  _adminPreloaded = true;
+  var [examRes, listaRes, atencionRes] = await Promise.all([
+    sb.from('examenes').select('id,titulo,grado,periodo,activo').order('created_at',{ascending:false}),
+    rpcAdmin('admin_listar_estudiantes', {}),
+    rpcAdmin('admin_resumen_atencion', {})
+  ]);
+  if (examRes.data) S.examenes = examRes.data;
+  if (listaRes.data) S.listaEst = listaRes.data;
+  if (atencionRes.data) S._atencion = atencionRes.data;
+  if (S.view === 'admin') renderAdmin();
+}
+
+// ── Accesos rápidos ──────────────────────────────────────────────
+function renderAccesosRapidos() {
+  var accesos = [
+    { tab:'examenes',  icon:'📝', label:'Exámenes' },
+    { tab:'lista',     icon:'👥', label:'Estudiantes' },
+    { tab:'buscar',    icon:'🔍', label:'Buscar' },
+    { tab:'informe',   icon:'📊', label:'Informe' },
+    { tab:'historial', icon:'🗄️', label:'Historial' }
+  ];
+  return `<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;padding:14px">
+    ${accesos.map(a => `<button class="btn btn-outline btn-sm" style="flex:1;min-width:110px" onclick="S.adminTab='${a.tab}';renderAdmin()">${a.icon} ${a.label}</button>`).join('')}
+  </div>`;
+}
+
+// ── Buscador global (filtra en memoria, sin query nueva) ─────────
+function renderGlobalSearchBar() {
+  return `<div class="card" style="position:relative">
+    <input type="text" id="global-search" placeholder="🔍 Buscar examen, estudiante o clave..." autocomplete="off" oninput="globalSearch()">
+    <div id="global-search-results" style="display:none;position:absolute;left:24px;right:24px;top:66px;background:#fff;border:1px solid var(--brd);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.15);z-index:50;max-height:320px;overflow-y:auto"></div>
+  </div>`;
+}
+
+function globalSearch() {
+  var input = document.getElementById('global-search');
+  var resultsEl = document.getElementById('global-search-results');
+  var q = (input.value || '').trim().toLowerCase();
+  if (q.length < 2) { resultsEl.style.display = 'none'; resultsEl.innerHTML = ''; return; }
+
+  var examMatches = (S.examenes || []).filter(e => (e.titulo||'').toLowerCase().includes(q)).slice(0, 6);
+  var estMatches = (S.listaEst || []).filter(e =>
+    (e.nombre||'').toLowerCase().includes(q) || (e.clave||'').toLowerCase() === q
+  ).slice(0, 6);
+
+  if (!examMatches.length && !estMatches.length) {
+    resultsEl.style.display = 'block';
+    resultsEl.innerHTML = '<div style="padding:12px;color:var(--sub);font-size:13px">Sin coincidencias en lo ya cargado.</div>';
+    return;
+  }
+
+  var html = '';
+  if (examMatches.length) {
+    html += '<div style="padding:8px 12px 4px;font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase">Exámenes</div>';
+    html += examMatches.map(e => `<div style="padding:8px 12px;cursor:pointer;border-top:1px solid #F0F0F0" onclick="S.adminTab='examenes';renderAdmin()">
+      <strong>${esc(e.titulo)}</strong> <span style="color:var(--sub);font-size:12px">— ${esc(e.grado||'')}</span>
+    </div>`).join('');
+  }
+  if (estMatches.length) {
+    html += '<div style="padding:8px 12px 4px;font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase">Estudiantes</div>';
+    html += estMatches.map(e => `<div style="padding:8px 12px;cursor:pointer;border-top:1px solid #F0F0F0" onclick="S.adminTab='lista';renderAdmin()">
+      <strong>${esc(e.nombre)}</strong> <span style="color:var(--sub);font-size:12px">— ${esc(e.grado||'')} ${esc(e.seccion||'')} · Orden ${e.numero_orden}${e.clave?' · Clave: '+esc(e.clave):''}</span>
+    </div>`).join('');
+  }
+  resultsEl.style.display = 'block';
+  resultsEl.innerHTML = html;
+}
+
+// ── "Necesita tu atención" ────────────────────────────────────────
+function renderAtencionBanner() {
+  var at = S._atencion;
+  if (!at) return `<div class="card"><div class="page-spinner" style="padding:6px 0"><div class="spinner"></div>Cargando resumen...</div></div>`;
+
+  var items = [];
+  if (at.pendientes_texto > 0) {
+    items.push(`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#FFF3E0;border-radius:8px;cursor:pointer" onclick="S.adminTab='buscar';renderAdmin()">
+      <span style="font-size:20px">📝</span>
+      <div style="font-size:13px"><strong>${at.pendientes_texto}</strong> respuesta(s) de desarrollo sin corregir</div>
+    </div>`);
+  }
+  if (at.sin_clave > 0) {
+    items.push(`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#FFF3E0;border-radius:8px;cursor:pointer" onclick="S.adminTab='lista';renderAdmin()">
+      <span style="font-size:20px">🔑</span>
+      <div style="font-size:13px"><strong>${at.sin_clave}</strong> estudiante(s) activo(s) sin clave asignada</div>
+    </div>`);
+  }
+  if (!items.length) {
+    return `<div class="card"><div class="success-box">✓ Todo al día — sin correcciones pendientes ni claves faltantes.</div></div>`;
+  }
+  return `<div class="card">
+    <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">⚠️ Necesita tu atención</div>
+    <div style="display:flex;flex-direction:column;gap:8px">${items.join('')}</div>
+  </div>`;
 }
 
 async function buildExamenesTab() {
