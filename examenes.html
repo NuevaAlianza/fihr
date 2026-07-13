@@ -235,12 +235,16 @@ async function loadSemanas(){
   }
   document.getElementById('main-content').innerHTML=`<div class="page-spinner"><div class="spinner"></div>Cargando semanas...</div>`;
 
-  const [{ data: configs }, { data: contenidos }] = await Promise.all([
+  const [{ data: configs }, { data: contenidos }, { data: informes }] = await Promise.all([
     sb.from('clases_config').select('*')
       .eq('grado', state.grado).eq('periodo', state.periodo),
     sb.from('clases_contenido').select('*')
-      .eq('grado', state.grado).eq('periodo', state.periodo)
+      .eq('grado', state.grado).eq('periodo', state.periodo),
+    sb.from('informes_grado').select('*')
+      .eq('grado', state.grado).order('created_at', { ascending: false }).limit(5)
   ]);
+
+  const informesHtml = (informes||[]).map(renderInformeCard).join('');
 
   // Map por semana
   const cfgMap = {};
@@ -255,7 +259,7 @@ async function loadSemanas(){
     .sort((a,b)=>a-b);
 
   if(semanaActivas.length===0){
-    document.getElementById('main-content').innerHTML=`
+    document.getElementById('main-content').innerHTML= informesHtml + `
       <div class="empty">
         <div class="icon">📅</div>
         <h3>${state.isAdmin?'No hay semanas configuradas':'Aún no hay clases publicadas'}</h3>
@@ -264,7 +268,7 @@ async function loadSemanas(){
     return;
   }
 
-  let html = '';
+  let html = informesHtml;
   for(const n of semanaActivas){
     const cfg = cfgMap[n];
     const con = conMap[n];
@@ -288,6 +292,35 @@ async function loadSemanas(){
   }
 
   document.getElementById('main-content').innerHTML=html;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RENDER INFORME GENERAL (cargado por el docente como JSON, Bloque 7)
+// Solo formatea lo que el docente ya redactó — sin ningún análisis
+// ni interpretación propia de la web.
+// ══════════════════════════════════════════════════════════════════
+function renderInformeCard(inf){
+  const fortalezas = parseJSON(inf.fortalezas, []);
+  const areas = parseJSON(inf.areas_de_mejora, []);
+  return `<div class="week-card">
+    <div class="week-header" style="background:linear-gradient(135deg,#1B5E20 0%,#0D3B10 100%)">
+      <div class="fase-badge">Informe general</div>
+      <h2>${esc(inf.titulo)}</h2>
+      ${inf.fecha?`<div class="week-meta">${esc(inf.fecha)}</div>`:''}
+    </div>
+    <div class="section">
+      <div class="sec-title" style="color:var(--gris)">Resumen</div>
+      <p style="font-size:14px;color:#333;line-height:1.5">${esc(inf.resumen)}</p>
+    </div>
+    ${fortalezas.length?`<div class="section">
+      <div class="sec-title" style="color:var(--ve)">Fortalezas</div>
+      <ul style="padding-left:18px;margin:0">${fortalezas.map(f=>`<li style="color:#1B5E20;margin-bottom:4px;font-size:14px">${esc(f)}</li>`).join('')}</ul>
+    </div>`:''}
+    ${areas.length?`<div class="section">
+      <div class="sec-title" style="color:var(--am)">Áreas de mejora</div>
+      <ul style="padding-left:18px;margin:0">${areas.map(a=>`<li style="color:#E65100;margin-bottom:4px;font-size:14px">${esc(a)}</li>`).join('')}</ul>
+    </div>`:''}
+  </div>`;
 }
 
 // ══════════════════════════════════════════════════════════════════

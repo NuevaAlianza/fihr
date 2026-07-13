@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'examenes-sca-v6';
+const CACHE = 'examenes-sca-v7';
 const STATIC = [
   './index.html',
   './offline.html',

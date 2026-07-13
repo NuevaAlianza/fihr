@@ -53,6 +53,7 @@ async function renderAdmin() {
   else if (S.adminTab === 'lista') tabContent = await buildListaTab();
   else if (S.adminTab === 'historial') tabContent = await buildHistorialTab();
   else if (S.adminTab === 'buscar') tabContent = await buildBuscarTab();
+  else if (S.adminTab === 'informe') tabContent = await buildInformeTab();
   document.getElementById('main-content').innerHTML = `
   <div class="card" style="padding-bottom:0">
     <h2 style="margin:0 0 0 0">Panel de administración</h2>
@@ -60,6 +61,7 @@ async function renderAdmin() {
       <div class="admin-tab${S.adminTab==='examenes'?' active':''}" onclick="S.adminTab='examenes';renderAdmin()">Exámenes</div>
       <div class="admin-tab${S.adminTab==='lista'?' active':''}" onclick="S.adminTab='lista';renderAdmin()">Lista de estudiantes</div>
       <div class="admin-tab${S.adminTab==='buscar'?' active':''}" onclick="S.adminTab='buscar';renderAdmin()">Buscar respuestas</div>
+      <div class="admin-tab${S.adminTab==='informe'?' active':''}" onclick="S.adminTab='informe';renderAdmin()">Informe de grado</div>
       <div class="admin-tab${S.adminTab==='historial'?' active':''}" onclick="S.adminTab='historial';renderAdmin()">Historial archivado</div>
     </div>
   </div>
@@ -388,6 +390,54 @@ function verDetalleRespuesta(idx) {
     </div>
   </div>`;
   abrirModal('buscar-detalle-overlay', null, html);
+}
+
+// ── Informe general por grado (JSON pegado por el docente) ─────
+var INFORME_EJEMPLO_JSON = `{
+  "titulo": "Informe general — Período 2, Semana 3",
+  "grado": "6to",
+  "fecha": "2026-07-12",
+  "resumen": "texto breve",
+  "fortalezas": ["punto 1", "punto 2"],
+  "areas_de_mejora": ["punto 1", "punto 2"]
+}`;
+
+async function buildInformeTab() {
+  return `<div class="card">
+    <h3 style="margin-bottom:8px">Informe general por grado</h3>
+    <p style="color:var(--sub);font-size:13px;margin-bottom:12px">Pega el JSON del informe — se publica tal cual en el portal de clases del grado indicado. La web no interpreta ni analiza nada, solo lo muestra con formato.</p>
+    <div class="info-box" style="margin-bottom:12px;font-family:monospace;font-size:11px;white-space:pre-wrap">${esc(INFORME_EJEMPLO_JSON)}</div>
+    <textarea id="informe-json-input" rows="10" style="font-size:12px;font-family:monospace" placeholder="Pega aquí el JSON del informe..."></textarea>
+    <div id="informe-error" style="display:none;margin-top:8px" class="warn-box"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('informe-json-input').value='';document.getElementById('informe-error').style.display='none'">Limpiar</button>
+      <button class="btn btn-primary btn-sm" onclick="guardarInformeGrado()">Publicar informe</button>
+    </div>
+  </div>`;
+}
+
+async function guardarInformeGrado() {
+  var txt = document.getElementById('informe-json-input').value.trim();
+  var errEl = document.getElementById('informe-error');
+  errEl.style.display = 'none';
+  if (!txt) { toast('Pega el JSON del informe'); return; }
+
+  var data;
+  try { data = JSON.parse(txt); }
+  catch (e) { errEl.style.display = 'block'; errEl.textContent = 'JSON inválido: ' + e.message; return; }
+
+  if (!data.titulo || !data.grado || !data.resumen) {
+    errEl.style.display = 'block';
+    errEl.textContent = 'El JSON necesita al menos: titulo, grado y resumen.';
+    return;
+  }
+
+  var { error } = await rpcAdmin('admin_guardar_informe', { p_datos: data });
+  if (error) { errEl.style.display = 'block'; errEl.textContent = 'Error: ' + error.message; return; }
+
+  toast('Informe publicado para ' + data.grado);
+  document.getElementById('informe-json-input').value = '';
+  S.adminTab = 'informe'; renderAdmin();
 }
 
 async function buildHistorialTab() {
