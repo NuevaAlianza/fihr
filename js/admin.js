@@ -111,6 +111,7 @@ async function buildExamenesTab() {
           </div>
           <button class="toggle-btn ${ex.activo?'on':'off'}" onclick="toggleActivo('${ex.id}',${ex.activo})" title="Abrir/Cerrar"><div class="toggle-knob"></div></button>
           <button class="btn btn-outline btn-sm" onclick="verRespuestas('${ex.id}')">Respuestas</button>
+          <button class="btn btn-gray btn-sm" onclick="verInforme('${ex.id}')">📊 Informe</button>
           <button class="btn btn-gray btn-sm" onclick="editarExamen('${ex.id}')">Editar</button>
           <button class="btn btn-xs" style="background:var(--ro2);color:var(--ro);border:none;font-weight:700;cursor:pointer;border-radius:6px" aria-label="Eliminar examen" onclick="eliminarExamen('${ex.id}','${esc(ex.titulo)}')">✕</button>
         </div>`;
@@ -835,6 +836,74 @@ async function buscarCodigo() {
   if (!data || !data.ok) { toast('Código no encontrado en el sistema', 3000); return; }
   var d = data.data;
   alert('✓ Código válido\n\nExamen: '+d.examen_titulo+'\nEstudiante: '+d.nombre+'\nGrado: '+d.grado+' · Sección: '+d.seccion+' · Orden: '+d.numero_orden+'\nInició: '+d.iniciado_at+'\nEstado: '+(d.envio_completado?'✓ Envió el examen':'⚠ Solo inició, no envió'));
+}
+
+// ── Informe agregado por grado ──────────────────────────────────
+async function verInforme(examenId) {
+  var { data, error } = await rpcAdmin('admin_informe_examen', { p_examen_id: examenId });
+  if (error) { toast('Error: '+error.message, 4000); return; }
+  if (!data || data.error) { toast(data?.error || 'Error al cargar el informe', 4000); return; }
+
+  var g = data.general || {};
+  var porSeccion = data.por_seccion || [];
+  var faltantes = data.faltantes || [];
+  var totalEsperados = porSeccion.reduce((s,x) => s + (x.esperados||0), 0);
+  var totalEnviados = g.enviados || 0;
+
+  var html = `
+  <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;overflow-y:auto;padding:20px">
+    <div style="max-width:700px;margin:0 auto;background:#fff;border-radius:12px;padding:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px">
+        <div>
+          <h2 style="margin:0;color:#1B3A6B">📊 Informe — ${esc(data.examen_titulo||'')}</h2>
+          <div style="font-size:12px;color:#888">${esc(data.grado||'')}</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="cerrarModal('informe-overlay')">Cerrar</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">
+        <div style="background:#EEF5FF;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#1B3A6B">${g.promedio ?? '—'}</div>
+          <div style="font-size:11px;color:#888">Promedio / ${g.maximo_posible ?? '—'}</div>
+        </div>
+        <div style="background:#E8F5E9;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#1B5E20">${g.maximo ?? '—'}</div>
+          <div style="font-size:11px;color:#888">Máximo</div>
+        </div>
+        <div style="background:#FFEBEE;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#B71C1C">${g.minimo ?? '—'}</div>
+          <div style="font-size:11px;color:#888">Mínimo</div>
+        </div>
+        <div style="background:#FFF3E0;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#E65100">${totalEnviados} / ${totalEsperados}</div>
+          <div style="font-size:11px;color:#888">Enviaron</div>
+        </div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:8px">Por sección</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:18px">
+        <thead><tr style="color:#888;font-size:11px"><th style="text-align:left;padding:5px 8px">Sección</th><th style="padding:5px 8px">Enviaron</th><th style="padding:5px 8px">Esperados</th><th style="padding:5px 8px">Promedio</th></tr></thead>
+        <tbody>
+          ${porSeccion.map(s => `<tr style="border-top:1px solid #F0F0F0">
+            <td style="padding:6px 8px;font-weight:700">${esc(s.seccion)}</td>
+            <td style="padding:6px 8px;text-align:center">${s.enviados}</td>
+            <td style="padding:6px 8px;text-align:center;color:#888">${s.esperados}</td>
+            <td style="padding:6px 8px;text-align:center">${s.promedio ?? '—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+
+      <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:8px">No enviaron (${faltantes.length})</div>
+      ${faltantes.length ? `<table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tbody>${faltantes.map(f => `<tr style="border-top:1px solid #F0F0F0">
+          <td style="padding:6px 8px;font-weight:600">${esc(f.nombre)}</td>
+          <td style="padding:6px 8px;text-align:center;color:#888">Orden ${f.numero_orden}</td>
+          <td style="padding:6px 8px;text-align:center;color:#888">Sec ${esc(f.seccion)}</td>
+        </tr>`).join('')}</tbody>
+      </table>` : `<div class="success-box">✓ Todos los estudiantes esperados enviaron el examen.</div>`}
+    </div>
+  </div>`;
+  abrirModal('informe-overlay', null, html);
 }
 
 // ── Modal: Estructura JSON ────────────────────────────────────
