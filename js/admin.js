@@ -52,12 +52,14 @@ async function renderAdmin() {
   if (S.adminTab === 'examenes')  tabContent = await buildExamenesTab();
   else if (S.adminTab === 'lista') tabContent = await buildListaTab();
   else if (S.adminTab === 'historial') tabContent = await buildHistorialTab();
+  else if (S.adminTab === 'buscar') tabContent = await buildBuscarTab();
   document.getElementById('main-content').innerHTML = `
   <div class="card" style="padding-bottom:0">
     <h2 style="margin:0 0 0 0">Panel de administración</h2>
     <div class="admin-tabs">
       <div class="admin-tab${S.adminTab==='examenes'?' active':''}" onclick="S.adminTab='examenes';renderAdmin()">Exámenes</div>
       <div class="admin-tab${S.adminTab==='lista'?' active':''}" onclick="S.adminTab='lista';renderAdmin()">Lista de estudiantes</div>
+      <div class="admin-tab${S.adminTab==='buscar'?' active':''}" onclick="S.adminTab='buscar';renderAdmin()">Buscar respuestas</div>
       <div class="admin-tab${S.adminTab==='historial'?' active':''}" onclick="S.adminTab='historial';renderAdmin()">Historial archivado</div>
     </div>
   </div>
@@ -238,6 +240,118 @@ async function guardarEstudiante() {
 
 async function borrarEstudiante(id) { if (!confirm('¿Eliminar este estudiante?')) return; await rpcAdmin('admin_delete_estudiante',{p_id:id}); S.adminTab='lista'; renderAdmin(); }
 async function borrarSeccion(grado, seccion) { if (!confirm('¿Borrar todos los estudiantes de '+grado+' sección '+seccion+'?')) return; await rpcAdmin('admin_delete_seccion',{p_grado:grado,p_seccion:seccion}); toast('Sección borrada'); S.adminTab='lista'; renderAdmin(); }
+
+// ── Buscar respuestas ────────────────────────────────────────
+async function buildBuscarTab() {
+  var { data: examsList } = await sb.from('examenes').select('id,titulo,grado').order('grado').order('titulo');
+  var opts = (examsList||[]).map(e => `<option value="${e.id}">${esc(e.grado)} — ${esc(e.titulo)}</option>`).join('');
+  return `<div class="card">
+    <h3 style="margin-bottom:12px">Buscar respuestas por estudiante</h3>
+    <p style="color:var(--sub);font-size:13px;margin-bottom:12px">Busca por nombre o número de orden, con corrección o sin corregir todavía.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+      <div style="flex:1;min-width:180px">
+        <label for="buscar-query">Nombre o número de orden</label>
+        <input type="text" id="buscar-query" placeholder="Ej: Garcia o 12" onkeydown="if(event.key==='Enter')buscarRespuestas()">
+      </div>
+      <div style="flex:1;min-width:200px">
+        <label for="buscar-examen">Examen (opcional)</label>
+        <select id="buscar-examen"><option value="">Todos los exámenes</option>${opts}</select>
+      </div>
+      <button class="btn btn-primary" onclick="buscarRespuestas()">Buscar</button>
+    </div>
+    <div id="buscar-resultados"></div>
+  </div>`;
+}
+
+async function buscarRespuestas() {
+  var query   = (document.getElementById('buscar-query')?.value || '').trim();
+  var examenId = document.getElementById('buscar-examen')?.value || null;
+  var cont    = document.getElementById('buscar-resultados');
+  if (!cont) return;
+  if (query.length < 2) { cont.innerHTML = '<div class="warn-box">Escribe al menos 2 caracteres para buscar.</div>'; return; }
+  cont.innerHTML = '<div class="page-spinner"><div class="spinner"></div>Buscando...</div>';
+
+  var { data, error } = await rpcAdmin('admin_buscar_respuestas', { p_query: query, p_examen_id: examenId || null });
+  if (error) { cont.innerHTML = `<div class="warn-box">Error: ${esc(error.message)}</div>`; return; }
+
+  var resultados = data.resultados || [];
+  S._buscarResultados = resultados;
+  if (!resultados.length) { cont.innerHTML = '<p style="color:var(--sub);text-align:center;padding:20px">Sin resultados.</p>'; return; }
+
+  cont.innerHTML = resultados.map((r, ri) => {
+    var puntaje = r.puntos_total ?? r.puntos_auto ?? 0;
+    var pct = r.puntos_maximo ? Math.round(puntaje / r.puntos_maximo * 100) : null;
+    return `<div class="exam-row">
+      <div class="exam-info">
+        <div class="exam-name">${esc(r.nombre)} <span style="font-weight:400;color:var(--sub)">— ${esc(r.examen_titulo)}</span></div>
+        <div class="exam-meta">${esc(r.grado)} ${esc(r.seccion)} · Orden ${r.numero_orden} · ${esc((r.submitted_at||'').replace('T',' ').substring(0,16))}
+          ${!r.texto_revisado ? ' · <span style="color:var(--am)">pendiente*</span>' : ''}
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700">${puntaje} / ${r.puntos_maximo}${pct!=null?' ('+pct+'%)':''}</div>
+        <button class="btn btn-outline btn-sm" onclick="verDetalleRespuesta(${ri})">Ver detalle</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _estadoBadge(estado) {
+  if (estado === 'correcta')   return '<span class="badge" style="background:#E8F5E9;color:#1B5E20">✓ Correcta</span>';
+  if (estado === 'incorrecta') return '<span class="badge" style="background:#FFEBEE;color:#B71C1C">✗ Incorrecta</span>';
+  if (estado === 'parcial')    return '<span class="badge badge-am">± Parcial</span>';
+  if (estado === 'manual')     return '<span class="badge badge-gray">📝 Manual</span>';
+  return '';
+}
+
+function _fmtValor(tipo, valor) {
+  if (valor === null || valor === undefined || valor === '') return '<em style="color:#aaa">Sin responder</em>';
+  if (tipo === 'vf') return valor === 'V' ? 'Verdadero' : (valor === 'F' ? 'Falso' : esc(String(valor)));
+  if (tipo === 'completar' && valor && typeof valor === 'object' && !Array.isArray(valor)) {
+    return Object.keys(valor).sort((a,b)=>a-b).map(k => esc(valor[k]||'—')).join(', ');
+  }
+  if (tipo === 'ordenar' && Array.isArray(valor)) {
+    return valor.map((v,i) => (i+1)+') '+esc(v)).join('<br>');
+  }
+  return esc(String(valor));
+}
+
+function verDetalleRespuesta(idx) {
+  var r = (S._buscarResultados || [])[idx];
+  if (!r) return;
+  var puntaje = r.puntos_total ?? r.puntos_auto ?? 0;
+  var html = `
+  <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;overflow-y:auto;padding:20px">
+    <div style="max-width:700px;margin:0 auto;background:#fff;border-radius:12px;padding:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px">
+        <div>
+          <h2 style="margin:0;color:#1B3A6B">${esc(r.nombre)}</h2>
+          <div style="font-size:12px;color:#888">${esc(r.examen_titulo)} · ${esc(r.grado)} ${esc(r.seccion)} · Orden ${r.numero_orden}</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="cerrarModal('buscar-detalle-overlay')">Cerrar</button>
+      </div>
+      <div class="info-box" style="margin-bottom:16px">
+        Auto: <strong>${r.puntos_auto??0}</strong>
+        ${r.puntos_texto!=null?' · Texto: <strong>'+r.puntos_texto+'</strong>':''}
+        · Total: <strong>${puntaje}</strong> / ${r.puntos_maximo}
+        ${!r.texto_revisado?' · <span style="color:var(--am)">pendiente de corrección</span>':''}
+      </div>
+      ${(r.preguntas||[]).filter(p => p.tipo !== 'lectura').map(p => `
+        <div style="border:1px solid #E0E0E0;border-radius:10px;padding:14px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
+            <div style="font-weight:700;font-size:14px">${p.qi+1}. ${esc(p.texto||'')}</div>
+            ${_estadoBadge(p.estado)}
+          </div>
+          <div style="font-size:12px;color:#888;margin-bottom:4px">Respuesta del estudiante:</div>
+          <div style="background:#F5F5F5;border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:8px">${_fmtValor(p.tipo, p.respuesta_dada)}</div>
+          ${p.respuesta_correcta!=null?`
+          <div style="font-size:12px;color:#888;margin-bottom:4px">Respuesta correcta:</div>
+          <div style="background:#E8F5E9;border-radius:8px;padding:8px 10px;font-size:13px">${_fmtValor(p.tipo, p.respuesta_correcta)}</div>`:''}
+        </div>`).join('')}
+    </div>
+  </div>`;
+  abrirModal('buscar-detalle-overlay', null, html);
+}
 
 async function buildHistorialTab() {
   var { data } = await sb.from('respuestas_archivadas').select('*').order('archived_at',{ascending:false}).limit(200);
