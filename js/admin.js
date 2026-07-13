@@ -139,7 +139,7 @@ async function editarExamen(id) {
 }
 
 async function buildListaTab() {
-  var { data } = await sb.from('estudiantes_lista').select('*').order('grado').order('seccion').order('numero_orden');
+  var { data } = await rpcAdmin('admin_listar_estudiantes', {});
   S.listaEst = data || [];
   var grados = ['2do','4to','5to','6to'], secs = ['A','B','C','D'];
   var html = `<div class="card">

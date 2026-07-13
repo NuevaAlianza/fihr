@@ -9,6 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/examenes.css">
+<script src="js/acceso.js"></script>
 </head>
 <body>
 <div id="copy-toast">✏️ Escribe en tu cuaderno — el esfuerzo de escribir ayuda a aprender</div>
@@ -220,7 +221,18 @@ function updateURL(){
 // ══════════════════════════════════════════════════════════════════
 // LOAD CONTENT
 // ══════════════════════════════════════════════════════════════════
+function renderGateForGrado(){
+  const main = document.getElementById('main-content');
+  renderGateAcceso(main, state.grado, function(){ loadSemanas(); });
+}
+
 async function loadSemanas(){
+  // Sin clave válida para este grado, no se muestra ningún contenido
+  // (el admin autenticado con PIN queda exento del gate de estudiante).
+  if(!state.isAdmin && !getAccesoGrado(state.grado)){
+    renderGateForGrado();
+    return;
+  }
   document.getElementById('main-content').innerHTML=`<div class="page-spinner"><div class="spinner"></div>Cargando semanas...</div>`;
 
   const [{ data: configs }, { data: contenidos }] = await Promise.all([

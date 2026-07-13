@@ -1,11 +1,11 @@
 'use strict';
-const CACHE = 'examenes-sca-v5';
+const CACHE = 'examenes-sca-v6';
 const STATIC = [
   './index.html',
   './offline.html',
   './css/styles.css',
   './css/examenes.css',
-  './js/config.js', './js/utils.js',
+  './js/config.js', './js/utils.js', './js/acceso.js',
   './js/student.js', './js/admin.js', './js/app.js',
   './manifest.json',
   './icons/icon-192.png',

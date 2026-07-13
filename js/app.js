@@ -16,6 +16,7 @@ var S = {
 function render() {
   switch (S.view) {
     case 'selector':    renderSelector();    break;
+    case 'gate':        renderGate();        break;
     case 'inicio':      renderInicio();      break;
     case 'registro':    renderRegistro();    break;
     case 'examen':      renderExamen();      break;

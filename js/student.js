@@ -42,8 +42,21 @@ function renderSelector() {
 
 function seleccionarGrado(nivel) {
   S.gradoSeleccionado = nivel;
-  S.view = 'inicio';
+  S.view = getAccesoGrado(nivel) ? 'inicio' : 'gate';
   render();
+}
+
+// ── Gate de clave (obligatorio antes de ver exámenes de un grado) ──
+function renderGate() {
+  document.getElementById('nav-sub').textContent = S.gradoSeleccionado || '';
+  var main = document.getElementById('main-content');
+  main.innerHTML = `<div style="margin-bottom:10px">
+    <button class="btn btn-outline btn-sm" onclick="S.view='selector';render()">&#8592; Cambiar grado</button>
+  </div><div id="gate-wrap"></div>`;
+  renderGateAcceso(document.getElementById('gate-wrap'), S.gradoSeleccionado, function() {
+    S.view = 'inicio';
+    render();
+  });
 }
 
 // ── Inicio (lista de exámenes por grado) ──────────────────────
@@ -129,10 +142,11 @@ function _gradoActualColor() {
 }
 
 async function iniciarExamen(id) {
+  if (!getAccesoGrado(S.gradoSeleccionado)) { S.view = 'gate'; render(); return; }
   var { data, error } = await sb.from('examenes').select('*').eq('id', id).single();
   if (error || !data || !data.activo) { toast('Examen no disponible'); return; }
   data.preguntas = _ocultarRespuestas(data.preguntas);
-  S.examen = data; S.resp = {}; S.ordenItems = {}; S._nombreConfirmado = null; S._claveEstudiante = null;
+  S.examen = data; S.resp = {}; S.ordenItems = {}; S._nombreConfirmado = null;
   S.view = 'registro'; render();
 }
 
@@ -242,20 +256,11 @@ async function _doLookup() {
     return;
   }
 
-  var { data: found, error: fErr } = await sb.from('estudiantes_lista')
-    .select('id,nombre,numero_orden,clave')
+  var { data: found } = await sb.from('estudiantes_lista')
+    .select('id,nombre,numero_orden')
     .eq('grado', grado).eq('seccion', seccion)
     .eq('numero_orden', orden).eq('activo', true)
     .limit(1);
-  if (fErr) {
-    var fb = await sb.from('estudiantes_lista')
-      .select('id,nombre,numero_orden')
-      .eq('grado', grado).eq('seccion', seccion)
-      .eq('numero_orden', orden).eq('activo', true)
-      .limit(1);
-    found = fb.data;
-  }
-  S._claveEstudiante = (found && found[0]?.clave) || null;
 
   if (!found || !found.length) {
     box.innerHTML = `<div class="warn-box">El número <strong>${orden}</strong> no está en la lista de ${grado} sección ${seccion}.<br><small>Verifica tu número de orden o consulta a tu docente.</small></div>`;
@@ -277,73 +282,33 @@ async function _doLookup() {
     </div>`;
 }
 
+// La identidad y la clave del estudiante ya fueron verificadas server-side
+// por el gate de acceso al grado (verificar_acceso_grado) antes de poder
+// llegar a esta pantalla — aquí solo confirmamos el nombre encontrado.
 function confirmarNombre(nombre) {
   S._nombreConfirmado = nombre;
   var box = document.getElementById('nombre-lookup');
-  if (S._claveEstudiante) {
-    box.innerHTML = `
-      <div style="border:2px solid #1B3A6B;border-radius:10px;padding:16px;background:#EEF5FF">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-          <div>
-            <div style="font-size:13px;color:#555">Identificado como:</div>
-            <div style="font-size:15px;font-weight:700;color:#1B3A6B">${esc(nombre)}</div>
-          </div>
-          <button class="btn btn-xs btn-gray" style="margin-left:auto" onclick="rehacerLookup()">Cambiar</button>
-        </div>
-        <label style="font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Ingresa tu clave personal</label>
-        <input type="text" id="clave-input" maxlength="8" placeholder="——————"
-          style="text-transform:uppercase;letter-spacing:4px;font-weight:700;font-size:20px;text-align:center;margin-top:0"
-          autocomplete="off" oninput="verificarClave()">
-        <div id="clave-error" style="display:none;color:#B71C1C;font-size:12px;margin-top:6px"></div>
-      </div>`;
-    var ci = document.getElementById('clave-input');
-    if (ci) { secureEl(ci); ci.focus(); }
-  } else {
-    box.innerHTML = `
-      <div style="border:2px solid #1B5E20;border-radius:10px;padding:12px 16px;background:#E8F5E9;display:flex;align-items:center;gap:10px">
-        <span style="font-size:20px">✓</span>
-        <div>
-          <div style="font-size:13px;color:#555">Identificado como:</div>
-          <div style="font-size:15px;font-weight:700;color:#1B5E20">${esc(nombre)}</div>
-        </div>
-        <button class="btn btn-xs btn-gray" style="margin-left:auto" onclick="rehacerLookup()">Cambiar</button>
-      </div>`;
-    document.getElementById('btn-comenzar').style.display = 'inline-flex';
-  }
-}
-
-function verificarClave() {
-  var input = document.getElementById('clave-input');
-  var errEl = document.getElementById('clave-error');
-  if (!input || !errEl) return;
-  var typed = input.value.trim().toUpperCase();
-  var expected = (S._claveEstudiante || '').trim().toUpperCase();
-  if (!typed) {
-    errEl.style.display = 'none'; input.style.borderColor = '';
-    document.getElementById('btn-comenzar').style.display = 'none'; return;
-  }
-  if (typed === expected) {
-    errEl.style.display = 'none'; input.style.borderColor = '#1B5E20';
-    document.getElementById('btn-comenzar').style.display = 'inline-flex';
-  } else if (typed.length >= expected.length) {
-    errEl.style.display = 'block'; errEl.textContent = 'Clave incorrecta. Verifica con tu docente.';
-    input.style.borderColor = '#B71C1C';
-    document.getElementById('btn-comenzar').style.display = 'none';
-  } else {
-    errEl.style.display = 'none'; input.style.borderColor = '';
-    document.getElementById('btn-comenzar').style.display = 'none';
-  }
+  box.innerHTML = `
+    <div style="border:2px solid #1B5E20;border-radius:10px;padding:12px 16px;background:#E8F5E9;display:flex;align-items:center;gap:10px">
+      <span style="font-size:20px">✓</span>
+      <div>
+        <div style="font-size:13px;color:#555">Identificado como:</div>
+        <div style="font-size:15px;font-weight:700;color:#1B5E20">${esc(nombre)}</div>
+      </div>
+      <button class="btn btn-xs btn-gray" style="margin-left:auto" onclick="rehacerLookup()">Cambiar</button>
+    </div>`;
+  document.getElementById('btn-comenzar').style.display = 'inline-flex';
 }
 
 function rechazarNombre() {
-  S._nombreConfirmado = null; S._claveEstudiante = null;
+  S._nombreConfirmado = null;
   var box = document.getElementById('nombre-lookup');
   box.innerHTML = `<div class="warn-box">Verifica tu número de orden y sección, o avísale a tu docente.</div>`;
   document.getElementById('btn-comenzar').style.display = 'none';
 }
 
 function rehacerLookup() {
-  S._nombreConfirmado = null; S._claveEstudiante = null;
+  S._nombreConfirmado = null;
   document.getElementById('r-orden').value = '';
   document.getElementById('r-seccion').value = '';
   document.getElementById('nombre-lookup').style.display = 'none';
