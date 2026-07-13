@@ -119,6 +119,15 @@ function _ocultarRespuestas(preguntas) {
   });
 }
 
+// Color de identidad del grado del examen actual (borde de tarjeta,
+// barra de progreso, punto activo) — en vez de usar siempre el azul
+// institucional genérico para toda vista de examen.
+function _gradoActualColor() {
+  var nivel = (S.examen && S.examen.grado) || S.gradoSeleccionado;
+  var gc = GRADOS_CONFIG.find(g => g.nivel === nivel);
+  return (gc && gc.g1) || '#1B3A6B';
+}
+
 async function iniciarExamen(id) {
   var { data, error } = await sb.from('examenes').select('*').eq('id', id).single();
   if (error || !data || !data.activo) { toast('Examen no disponible'); return; }
@@ -145,7 +154,7 @@ function renderRegistro() {
        </div>`;
 
   document.getElementById('main-content').innerHTML = `
-  <div class="card" style="max-width:500px;margin:0 auto">
+  <div class="card" style="max-width:500px;margin:0 auto;border-top:4px solid ${_gradoActualColor()}">
     <h2>${esc(ex.titulo)}</h2>
     ${ex.descripcion ? `<div style="color:var(--sub);font-size:14px;margin-bottom:12px">${esc(ex.descripcion)}</div>` : ''}
     ${ex.instrucciones ? `<div class="info-box"><strong>Instrucciones:</strong> ${esc(ex.instrucciones)}</div>` : ''}
@@ -487,11 +496,12 @@ function renderExamen() {
   var resp_count = Object.keys(S.resp).filter(k => qs[k] && qs[k].tipo !== 'lectura').length;
   document.getElementById('nav-sub').textContent = S.est.nombre + ' · ' + S.est.seccion;
   var pct = evalQs.length > 0 ? Math.round(resp_count / evalQs.length * 100) : 0;
+  var gColor = _gradoActualColor();
   var navDots = qs.map((q, i) => {
     var isRead = q.tipo === 'lectura';
     var ans = S.resp[i] !== undefined && S.resp[i] !== null && S.resp[i] !== '';
     var active = i === qi;
-    var bg = active ? '#1B3A6B' : (isRead ? '#93C5FD' : (ans ? '#1B5E20' : '#ccc'));
+    var bg = active ? gColor : (isRead ? '#93C5FD' : (ans ? '#1B5E20' : '#ccc'));
     return `<div onclick="goToQ(${i})" title="${isRead?'Lectura':'Pregunta '+(i+1)}" style="width:${active?'28px':'10px'};height:10px;border-radius:5px;background:${bg};cursor:pointer;transition:.2s;flex-shrink:0"></div>`;
   }).join('');
   var html = `
@@ -502,7 +512,7 @@ function renderExamen() {
     </div>
     <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">${navDots}</div>
     <div style="display:flex;gap:2px;margin-top:6px">
-      <div style="width:${pct}%;height:4px;background:#1B3A6B;border-radius:2px 0 0 2px"></div>
+      <div style="width:${pct}%;height:4px;background:${gColor};border-radius:2px 0 0 2px"></div>
       <div style="flex:1;height:4px;background:#e0e0e0;border-radius:0 2px 2px 0"></div>
     </div>
   </div>`;
