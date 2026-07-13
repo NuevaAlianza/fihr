@@ -718,18 +718,26 @@ async function verificarPin(){
   document.getElementById('pin-btn').disabled=true;
   document.getElementById('pin-btn').textContent='Verificando...';
 
-  const hash = await sha256(pin);
-  const {data} = await sb.from('admin_config').select('pin_hash').single();
-  if(data && data.pin_hash === hash){
-    state.pinHash=hash;
+  const {data,error} = await sb.rpc('admin_login',{p_pin:pin});
+  if(error){
+    document.getElementById('pin-error').textContent='Error de conexión. Intenta de nuevo.';
+    document.getElementById('pin-btn').disabled=false;
+    document.getElementById('pin-btn').textContent='Entrar';
+    return;
+  }
+  if(data && data.ok){
+    state.pinHash=data.token;
     state.isAdmin=true;
-    sessionStorage.setItem('admin_hash',hash);
+    sessionStorage.setItem('admin_hash',data.token);
     document.getElementById('pin-error').textContent='';
     showControlScreen();
     updateAdminUI();
     loadSemanas(); // Recargar para mostrar inactivas
   } else {
-    document.getElementById('pin-error').textContent='PIN incorrecto. Inténtalo de nuevo.';
+    const msg = data && data.error==='bloqueado'
+      ? 'Demasiados intentos. Espera '+(data.segundos||30)+' segundos.'
+      : 'PIN incorrecto. Inténtalo de nuevo.';
+    document.getElementById('pin-error').textContent=msg;
     document.getElementById('pin-btn').disabled=false;
     document.getElementById('pin-btn').textContent='Entrar';
     ['d0','d1','d2','d3'].forEach(id=>document.getElementById(id).value='');
@@ -738,8 +746,8 @@ async function verificarPin(){
 }
 
 async function verificarHashAlmacenado(){
-  const {data} = await sb.from('admin_config').select('pin_hash').single();
-  if(data && data.pin_hash === state.pinHash){
+  const {data} = await sb.rpc('admin_validar_sesion',{p_token:state.pinHash});
+  if(data && data.ok){
     state.isAdmin=true;
     updateAdminUI();
   } else {
@@ -753,7 +761,8 @@ function updateAdminUI(){
   document.getElementById('btn-admin-ghost').style.display=state.isAdmin?'none':'flex';
 }
 
-function cerrarSesionAdmin(){
+async function cerrarSesionAdmin(){
+  if(state.pinHash){ await sb.rpc('admin_logout',{p_pin_hash:state.pinHash}); }
   state.isAdmin=false;
   state.pinHash=null;
   sessionStorage.removeItem('admin_hash');
@@ -886,11 +895,6 @@ async function toggleSemana(grado,periodo,semana,checkbox){
 // ══════════════════════════════════════════════════════════════════
 // UTILS
 // ══════════════════════════════════════════════════════════════════
-async function sha256(msg){
-  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
 function esc(s){
   if(!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

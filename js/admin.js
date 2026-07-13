@@ -19,37 +19,28 @@ function renderAdminLogin() {
 }
 
 async function checkPin() {
-  var LS_KEY = 'admin_login_attempts';
-  var now = Date.now();
-  var stored = JSON.parse(localStorage.getItem(LS_KEY) || '{"count":0,"blockedUntil":0}');
-  if (stored.blockedUntil > now) {
-    var secsLeft = Math.ceil((stored.blockedUntil - now) / 1000);
-    toast('Demasiados intentos. Espera ' + secsLeft + ' segundos.', 3500);
-    return;
-  }
   var pin = document.getElementById('pin-in').value;
-  var hash = await sha256(pin);
-  var { data } = await sb.from('admin_config').select('pin_hash').single();
-  if (data && data.pin_hash === hash) {
-    localStorage.removeItem(LS_KEY);
-    S.adminAuth = true; S.pinHash = hash;
+  var btn = document.querySelector('#main-content .btn-primary');
+  if (btn) btn.disabled = true;
+  var { data, error } = await sb.rpc('admin_login', { p_pin: pin });
+  if (btn) btn.disabled = false;
+  if (error) { toast('Error de conexión: ' + error.message, 4000); return; }
+  if (data && data.ok) {
+    S.adminAuth = true; S.pinHash = data.token;
     document.getElementById('btn-admin').textContent = 'Salir';
     document.getElementById('btn-admin').onclick = adminLogout;
     S.view = 'admin'; render();
+  } else if (data && data.error === 'bloqueado') {
+    toast('Demasiados intentos. Espera ' + (data.segundos || 30) + ' segundos.', 3500);
   } else {
-    var count = (stored.count || 0) + 1;
-    var blockedUntil = count >= 5 ? now + 30000 : 0;
-    localStorage.setItem(LS_KEY, JSON.stringify({ count, blockedUntil }));
-    if (blockedUntil) {
-      toast('Demasiados intentos. Bloqueado 30 segundos.', 4000);
-    } else {
-      toast('PIN incorrecto — ' + (5 - count) + ' intento(s) restante(s)');
-    }
+    var restantes = data && data.intentos_restantes != null ? data.intentos_restantes : null;
+    toast('PIN incorrecto' + (restantes != null ? ' — ' + restantes + ' intento(s) restante(s)' : ''));
   }
 }
 
-function adminLogout() {
-  S.adminAuth = false; S.view = 'selector';
+async function adminLogout() {
+  if (S.pinHash) { await rpcAdmin('admin_logout', {}); }
+  S.adminAuth = false; S.pinHash = null; S.view = 'selector';
   document.getElementById('btn-admin').textContent = 'Admin';
   document.getElementById('btn-admin').onclick = showAdminLogin;
   render();

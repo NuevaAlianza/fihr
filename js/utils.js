@@ -84,11 +84,6 @@ function generarCodigoInicio(grado, seccion, orden, examenId) {
 }
 
 // ── Crypto ────────────────────────────────────────────────────
-async function sha256(m) {
-  var b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(m));
-  return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join('');
-}
-
 function generarToken() {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {

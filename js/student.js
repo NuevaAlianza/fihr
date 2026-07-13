@@ -529,6 +529,7 @@ function goToQ(i) {
     if (el.id && el.id.startsWith('txt_')) { var qi = parseInt(el.id.split('_')[1]); if (el.value.trim()) S.resp[qi] = el.value.trim(); }
     if (el.id && el.id.startsWith('bl_'))  { var p = el.id.split('_'); var qi = parseInt(p[1]), bi = parseInt(p[2]); if (!S.resp[qi]) S.resp[qi] = {}; S.resp[qi][bi] = el.value.trim(); }
   });
+  _backupResp();
   var qs = S.examen.preguntas || [];
   S.currentQ = Math.max(0, Math.min(i, qs.length - 1));
   renderExamen();
@@ -605,8 +606,16 @@ function renderPregunta(q, i) {
     </div>${inner}</div>`;
 }
 
-function setR(qi, v) { S.resp[qi] = v; }
-function setRBlank(qi, bi, v) { if (!S.resp[qi]) S.resp[qi] = {}; S.resp[qi][bi] = v; }
+function setR(qi, v) { S.resp[qi] = v; _backupResp(); }
+function setRBlank(qi, bi, v) { if (!S.resp[qi]) S.resp[qi] = {}; S.resp[qi][bi] = v; _backupResp(); }
+
+// Respaldo continuo de las respuestas en sessionStorage — para no
+// perderlas si se corta la conexión o se cierra la pestaña antes
+// de llegar a enviar el examen.
+function _backupResp() {
+  if (!S.examen) return;
+  try { sessionStorage.setItem('sca_resp_backup', JSON.stringify({ examen_id: S.examen.id, resp: S.resp })); } catch(e) {}
+}
 
 function initDrag() {
   document.querySelectorAll('.orden-list').forEach(list => {
@@ -686,7 +695,7 @@ async function submitExamen(auto) {
     if (el.id && el.id.startsWith('bl_'))  { var p = el.id.split('_'); var qi = parseInt(p[1]), bi = parseInt(p[2]); if (!S.resp[qi]) S.resp[qi] = {}; S.resp[qi][bi] = el.value.trim(); }
   });
   // Respaldo local por si falla el envío
-  try { sessionStorage.setItem('sca_resp_backup', JSON.stringify({ examen_id: S.examen.id, resp: S.resp })); } catch(e) {}
+  _backupResp();
   stopTimer();
 
   // Calificación server-side — el cliente no tiene las respuestas correctas
