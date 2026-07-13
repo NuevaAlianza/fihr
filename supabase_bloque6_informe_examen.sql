@@ -14,10 +14,24 @@
 -- examen (secciones_activas) si el examen las restringe; si no,
 -- todas las secciones con estudiantes activos en ese grado.
 --
+-- secciones_activas es un ARRAY nativo de Postgres (TEXT[]), no
+-- JSONB — PostgREST lo serializa igual como ["A","B"] hacia el
+-- cliente, lo que hizo parecer JSONB, pero server-side es un
+-- array de Postgres. Tratarlo como JSONB (jsonb_array_length /
+-- jsonb_array_elements_text) rompía con
+-- "22P02 invalid input syntax for type json — Token "A" is
+-- invalid" apenas el examen tenía secciones_activas con datos
+-- (ej. ['A']): Postgres intentaba parsear el literal de array
+-- {A} como si fuera texto JSON.
+--
 -- El promedio usa COALESCE(puntos_total, puntos_auto): si el
 -- docente todavía no corrigió las preguntas de desarrollo de un
 -- estudiante, se usa su puntaje automático parcial en vez de
--- excluirlo del promedio.
+-- excluirlo del promedio. Se castea a ::numeric antes de ROUND()
+-- porque round(double precision, integer) no existe en Postgres
+-- (solo round(numeric, integer)) — si puntos_auto/puntos_total
+-- fueran real/double precision en vez de integer, ROUND() rompería
+-- con "function round(double precision, integer) does not exist".
 -- =============================================================
 
 CREATE OR REPLACE FUNCTION admin_informe_examen(
@@ -32,7 +46,7 @@ DECLARE
   v_hash              TEXT;
   v_titulo            TEXT;
   v_grado             TEXT;
-  v_secciones_activas JSONB;
+  v_secciones_activas TEXT[];
   v_secciones         TEXT[];
   v_sec               TEXT;
   v_general           JSONB;
@@ -54,8 +68,8 @@ BEGIN
     RETURN jsonb_build_object('error', 'Examen no encontrado');
   END IF;
 
-  IF v_secciones_activas IS NOT NULL AND jsonb_array_length(v_secciones_activas) > 0 THEN
-    SELECT array_agg(x ORDER BY x) INTO v_secciones FROM jsonb_array_elements_text(v_secciones_activas) x;
+  IF v_secciones_activas IS NOT NULL AND array_length(v_secciones_activas, 1) > 0 THEN
+    SELECT array_agg(x ORDER BY x) INTO v_secciones FROM unnest(v_secciones_activas) x;
   ELSE
     SELECT array_agg(DISTINCT seccion ORDER BY seccion) INTO v_secciones
     FROM estudiantes_lista WHERE grado = v_grado AND activo = true;
@@ -64,7 +78,7 @@ BEGIN
 
   -- ── Estadísticas generales (todos los envíos del examen) ──
   SELECT jsonb_build_object(
-    'promedio',        ROUND(AVG(COALESCE(puntos_total, puntos_auto)), 1),
+    'promedio',        ROUND(AVG(COALESCE(puntos_total, puntos_auto))::numeric, 1),
     'minimo',          MIN(COALESCE(puntos_total, puntos_auto)),
     'maximo',          MAX(COALESCE(puntos_total, puntos_auto)),
     'maximo_posible',  MAX(puntos_maximo),
@@ -79,7 +93,7 @@ BEGIN
     FROM estudiantes_lista
     WHERE grado = v_grado AND seccion = v_sec AND activo = true;
 
-    SELECT COUNT(*), ROUND(AVG(COALESCE(puntos_total, puntos_auto)), 1)
+    SELECT COUNT(*), ROUND(AVG(COALESCE(puntos_total, puntos_auto))::numeric, 1)
     INTO v_enviados, v_promedio
     FROM respuestas_examenes
     WHERE examen_id::text = p_examen_id AND seccion = v_sec;
