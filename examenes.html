@@ -53,7 +53,7 @@ function showCopyToast(){
     <div class="nav-actions">
       <div id="admin-indicator" style="display:none">
         <button class="btn-ghost active" onclick="openAdmin()">⚙️ Admin</button>
-        <button class="btn-ghost" onclick="cerrarSesionAdmin()" title="Cerrar sesión admin">✕</button>
+        <button class="btn-ghost" onclick="cerrarSesionAdmin()" aria-label="Cerrar sesión admin">✕</button>
       </div>
       <button class="btn-ghost" id="btn-admin-ghost" onclick="openAdmin()">🔒</button>
     </div>
@@ -73,11 +73,11 @@ function showCopyToast(){
 </main>
 
 <!-- ── ADMIN OVERLAY ── -->
-<div id="admin-overlay">
+<div id="admin-overlay" role="dialog" aria-modal="true" aria-labelledby="admin-panel-title">
   <div id="admin-panel">
     <div class="admin-header">
-      <h3>⚙️ Panel de Control</h3>
-      <button class="close-btn" onclick="closeAdmin()">✕</button>
+      <h3 id="admin-panel-title">⚙️ Panel de Control</h3>
+      <button class="close-btn" aria-label="Cerrar panel" onclick="closeAdmin()">✕</button>
     </div>
 
     <!-- PIN Screen -->
@@ -458,17 +458,24 @@ function renderSemanaCard(num, cfg, con){
 // ══════════════════════════════════════════════════════════════════
 // ADMIN — PIN
 // ══════════════════════════════════════════════════════════════════
+let _adminFocusReturn=null;
 function openAdmin(){
+  _adminFocusReturn=document.activeElement;
   document.getElementById('admin-overlay').classList.add('open');
   if(state.isAdmin){
     showControlScreen();
+    document.querySelector('#admin-panel .close-btn').focus();
   } else {
     document.getElementById('pin-screen').style.display='block';
     document.getElementById('control-screen').style.display='none';
     document.getElementById('d0').focus();
   }
 }
-function closeAdmin(){document.getElementById('admin-overlay').classList.remove('open')}
+function closeAdmin(){
+  document.getElementById('admin-overlay').classList.remove('open');
+  if(_adminFocusReturn && document.body.contains(_adminFocusReturn)) _adminFocusReturn.focus();
+  _adminFocusReturn=null;
+}
 
 function pinInput(el,next){
   el.value=el.value.replace(/\D/g,'');

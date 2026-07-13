@@ -17,6 +17,46 @@ function secureEl(el) {
   el.addEventListener('contextmenu', e => e.preventDefault());
 }
 
+// ── Modales accesibles ────────────────────────────────────────
+// Crea un overlay con role="dialog"/aria-modal, mueve el foco adentro,
+// atrapa Tab dentro del modal, cierra con Escape y devuelve el foco
+// al elemento que estaba activo antes de abrir el modal.
+var _modalFocusReturn = null;
+
+function abrirModal(id, className, innerHtml) {
+  _modalFocusReturn = document.activeElement;
+  var overlay = document.createElement('div');
+  overlay.id = id;
+  if (className) overlay.className = className;
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.innerHTML = innerHtml;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('keydown', _modalKeydown);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) cerrarModal(id); });
+  var focusable = overlay.querySelector('button, input, textarea, select, [tabindex]');
+  if (focusable) focusable.focus();
+  return overlay;
+}
+
+function cerrarModal(id) {
+  var el = document.getElementById(id);
+  if (el) el.remove();
+  if (_modalFocusReturn && document.body.contains(_modalFocusReturn)) _modalFocusReturn.focus();
+  _modalFocusReturn = null;
+}
+
+function _modalKeydown(e) {
+  if (e.key !== 'Escape' && e.key !== 'Tab') return;
+  var overlay = e.currentTarget;
+  if (e.key === 'Escape') { e.stopPropagation(); cerrarModal(overlay.id); return; }
+  var focusables = overlay.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  if (!focusables.length) return;
+  var first = focusables[0], last = focusables[focusables.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+
 // ── Toast ─────────────────────────────────────────────────────
 function toast(msg, ms) {
   ms = ms || 2500;

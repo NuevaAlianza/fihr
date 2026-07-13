@@ -576,7 +576,7 @@ function renderPregunta(q, i) {
       var txt = esc(q.texto||''); var bi = 0;
       txt = txt.replace(/___/g, () => {
         var b = bi++; var v = (resp && resp[b]) || '';
-        return `<input type="text" class="blank-input secure-txt" id="bl_${i}_${b}" value="${esc(v)}" placeholder="?" oninput="setRBlank(${i},${b},this.value)" maxlength="60">`;
+        return `<input type="text" class="blank-input secure-txt" id="bl_${i}_${b}" value="${esc(v)}" placeholder="?" aria-label="Espacio en blanco ${b+1}" oninput="setRBlank(${i},${b},this.value)" maxlength="60">`;
       });
       inner = `<div class="completar-txt">${txt}</div>`;
       break;

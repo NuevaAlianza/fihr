@@ -16,7 +16,7 @@ var GRADOS_CONFIG = [
   {
     nivel:'1ro', nombre:'Primer Grado', etapa:'La semilla',
     g1:'#6D4C41', g2:'#3E2723', disponible:false,
-    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <ellipse cx="45" cy="68" rx="35" ry="8" fill="rgba(0,0,0,.2)"/>
       <rect x="10" y="60" width="70" height="14" rx="7" fill="#4E342E" opacity=".6"/>
       <ellipse cx="45" cy="52" rx="16" ry="11" fill="#D7CCC8" transform="rotate(-15,45,52)"/>
@@ -30,7 +30,7 @@ var GRADOS_CONFIG = [
   {
     nivel:'2do', nombre:'Segundo Grado', etapa:'Los primeros brotes',
     g1:'#66BB6A', g2:'#1B5E20', disponible:true,
-    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <ellipse cx="45" cy="72" rx="30" ry="6" fill="rgba(0,0,0,.2)"/>
       <rect x="15" y="66" width="60" height="10" rx="5" fill="#4E342E" opacity=".5"/>
       <path d="M45 66 Q44 50 45 30" stroke="#A5D6A7" stroke-width="3.5" fill="none" stroke-linecap="round"/>
@@ -43,7 +43,7 @@ var GRADOS_CONFIG = [
   {
     nivel:'3ro', nombre:'Tercer Grado', etapa:'Creciendo hacia el sol',
     g1:'#26A69A', g2:'#004D40', disponible:false,
-    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <ellipse cx="45" cy="74" rx="28" ry="5" fill="rgba(0,0,0,.2)"/>
       <rect x="17" y="69" width="56" height="9" rx="4" fill="#4E342E" opacity=".5"/>
       <path d="M45 69 Q43 52 45 20" stroke="#80CBC4" stroke-width="4" fill="none" stroke-linecap="round"/>
@@ -57,7 +57,7 @@ var GRADOS_CONFIG = [
   {
     nivel:'4to', nombre:'Cuarto Grado', etapa:'El árbol joven',
     g1:'#42A5F5', g2:'#0D47A1', disponible:true,
-    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <ellipse cx="70" cy="14" rx="14" ry="7" fill="rgba(255,255,255,.25)"/>
       <ellipse cx="45" cy="75" rx="30" ry="5" fill="rgba(0,0,0,.2)"/>
       <rect x="15" y="70" width="60" height="8" rx="4" fill="#5D4037" opacity=".5"/>
@@ -72,7 +72,7 @@ var GRADOS_CONFIG = [
   {
     nivel:'5to', nombre:'Quinto Grado', etapa:'El árbol maduro',
     g1:'#8BC34A', g2:'#33691E', disponible:true,
-    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <ellipse cx="45" cy="76" rx="32" ry="5" fill="rgba(0,0,0,.2)"/>
       <rect x="13" y="71" width="64" height="8" rx="4" fill="#4E342E" opacity=".6"/>
       <path d="M40 71 Q34 74 28 73" stroke="#6D4C41" stroke-width="2.5" fill="none" stroke-linecap="round"/>
@@ -91,7 +91,7 @@ var GRADOS_CONFIG = [
   {
     nivel:'6to', nombre:'Sexto Grado', etapa:'Los frutos del año',
     g1:'#FF8F00', g2:'#BF360C', disponible:true,
-    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+    svg:`<svg viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <ellipse cx="45" cy="77" rx="32" ry="5" fill="rgba(0,0,0,.2)"/>
       <rect x="13" y="72" width="64" height="8" rx="4" fill="#4E342E" opacity=".6"/>
       <path d="M40 72 Q33 76 26 74" stroke="#5D4037" stroke-width="2.5" fill="none" stroke-linecap="round"/>

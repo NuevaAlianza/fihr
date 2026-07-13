@@ -110,7 +110,7 @@ async function buildExamenesTab() {
           <button class="toggle-btn ${ex.activo?'on':'off'}" onclick="toggleActivo('${ex.id}',${ex.activo})" title="Abrir/Cerrar"><div class="toggle-knob"></div></button>
           <button class="btn btn-outline btn-sm" onclick="verRespuestas('${ex.id}')">Respuestas</button>
           <button class="btn btn-gray btn-sm" onclick="editarExamen('${ex.id}')">Editar</button>
-          <button class="btn btn-xs" style="background:var(--ro2);color:var(--ro);border:none;font-weight:700;cursor:pointer;border-radius:6px" onclick="eliminarExamen('${ex.id}','${esc(ex.titulo)}')">✕</button>
+          <button class="btn btn-xs" style="background:var(--ro2);color:var(--ro);border:none;font-weight:700;cursor:pointer;border-radius:6px" aria-label="Eliminar examen" onclick="eliminarExamen('${ex.id}','${esc(ex.titulo)}')">✕</button>
         </div>`;
       });
     });
@@ -190,12 +190,12 @@ async function buildListaTab() {
         ${g.items.map(e => {
           var claveHtml = e.clave
             ? `<span style="font-family:monospace;font-weight:700;letter-spacing:2px;color:#1B3A6B;font-size:12px">${esc(e.clave)}</span>
-               <button class="btn btn-xs btn-gray" style="margin-left:4px" onclick="editarClave('${e.id}','${esc(e.clave).replace(/'/g,"\\'")}')">✏</button>`
+               <button class="btn btn-xs btn-gray" style="margin-left:4px" aria-label="Editar clave" onclick="editarClave('${e.id}','${esc(e.clave).replace(/'/g,"\\'")}')">✏</button>`
             : `<button class="btn btn-xs btn-outline" onclick="editarClave('${e.id}','')">+ Clave</button>`;
           return `<tr>
             <td>${e.numero_orden}</td><td>${esc(e.nombre)}</td>
             <td id="clave_td_${e.id}">${claveHtml}</td>
-            <td><button class="btn btn-xs" style="background:var(--ro2);color:var(--ro);border:none;cursor:pointer;border-radius:4px" onclick="borrarEstudiante('${e.id}')">✕</button></td>
+            <td><button class="btn btn-xs" style="background:var(--ro2);color:var(--ro);border:none;cursor:pointer;border-radius:4px" aria-label="Eliminar estudiante" onclick="borrarEstudiante('${e.id}')">✕</button></td>
           </tr>`;
         }).join('')}
         </tbody></table></div>`;
@@ -374,11 +374,10 @@ async function revisarTexto(respId) {
       <button class="btn btn-outline" onclick="cerrarRevision()">Cancelar</button>
       <button class="btn btn-primary" onclick="guardarRevision('${respId}',${JSON.stringify(pendientes.map(d=>d.qi))})">Guardar notas</button>
     </div></div></div>`;
-  var overlay = document.createElement('div'); overlay.id = 'revision-overlay'; overlay.innerHTML = html;
-  document.body.appendChild(overlay);
+  abrirModal('revision-overlay', null, html);
 }
 
-function cerrarRevision() { var el = document.getElementById('revision-overlay'); if (el) el.remove(); }
+function cerrarRevision() { cerrarModal('revision-overlay'); }
 
 async function guardarRevision(respId, qIndices) {
   var btn = document.querySelector('#revision-overlay .btn-primary');
@@ -600,15 +599,14 @@ async function verIntentos(examenId) {
   var items = data.data || [];
   var sinEnvio = items.filter(i => !i.envio_completado);
   var conEnvio = items.filter(i =>  i.envio_completado);
-  var overlay = document.createElement('div'); overlay.id = 'intentos-overlay';
-  overlay.innerHTML = `
+  var html = `
   <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;overflow-y:auto;padding:20px">
     <div style="max-width:700px;margin:0 auto;background:#fff;border-radius:12px;padding:24px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <h2 style="margin:0;color:#1B3A6B">Registro de intentos</h2>
         <div style="display:flex;gap:8px">
           <button class="btn btn-outline btn-sm" onclick="buscarCodigo()">🔍 Verificar código</button>
-          <button class="btn btn-outline btn-sm" onclick="document.getElementById('intentos-overlay').remove()">Cerrar</button>
+          <button class="btn btn-outline btn-sm" onclick="cerrarModal('intentos-overlay')">Cerrar</button>
         </div>
       </div>
       ${sinEnvio.length>0 ? `
@@ -646,7 +644,7 @@ async function verIntentos(examenId) {
       </div>
     </div>
   </div>`;
-  document.body.appendChild(overlay);
+  abrirModal('intentos-overlay', null, html);
 }
 
 async function resetearIntento(examenId, orden, grado, seccion, nombre, btnEl) {
@@ -655,7 +653,7 @@ async function resetearIntento(examenId, orden, grado, seccion, nombre, btnEl) {
   var { error } = await rpcAdmin('admin_resetear_intento', { p_examen_id:examenId, p_numero_orden:orden, p_grado:grado, p_seccion:seccion });
   if (error) { toast('Error: '+error.message, 4000); btnEl.disabled=false; btnEl.textContent='Reactivar'; return; }
   toast('Acceso reactivado para '+nombre);
-  document.getElementById('intentos-overlay').remove();
+  cerrarModal('intentos-overlay');
   verIntentos(examenId);
 }
 
@@ -729,14 +727,11 @@ function mostrarEstructuraJSON() {
 
   var jsonStr = JSON.stringify(ejemplo, null, 2);
 
-  var overlay = document.createElement('div');
-  overlay.id = 'json-struct-overlay';
-  overlay.className = 'modal-overlay';
-  overlay.innerHTML = `
+  var html = `
     <div class="modal-box">
       <div class="modal-header">
         <h3>Estructura JSON para importar examen</h3>
-        <button class="modal-close" onclick="document.getElementById('json-struct-overlay').remove()">✕</button>
+        <button class="modal-close" aria-label="Cerrar" onclick="cerrarModal('json-struct-overlay')">✕</button>
       </div>
       <div class="modal-body">
         <p class="modal-sub">
@@ -773,8 +768,7 @@ function mostrarEstructuraJSON() {
         </div>
       </div>
     </div>`;
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+  abrirModal('json-struct-overlay', 'modal-overlay', html);
 }
 
 function escJsonDisplay(s) {
@@ -828,11 +822,11 @@ function editarClave(id, claveActual) {
   var td = document.getElementById('clave_td_' + id);
   if (!td) return;
   td.innerHTML = `
-    <input type="text" id="ci_${id}" value="${esc(claveActual)}" maxlength="8" placeholder="------"
+    <input type="text" id="ci_${id}" value="${esc(claveActual)}" maxlength="8" placeholder="------" aria-label="Clave del estudiante"
       style="width:80px;font-size:13px;font-family:monospace;text-transform:uppercase;letter-spacing:1px;padding:3px 6px;border:1.5px solid var(--az);border-radius:4px"
       onkeydown="if(event.key==='Enter')guardarClave('${id}',this.value)">
-    <button class="btn btn-xs btn-primary" style="margin-left:4px" onclick="guardarClave('${id}',document.getElementById('ci_${id}').value)">✓</button>
-    <button class="btn btn-xs btn-gray" onclick="S.adminTab='lista';renderAdmin()">✗</button>`;
+    <button class="btn btn-xs btn-primary" style="margin-left:4px" aria-label="Guardar clave" onclick="guardarClave('${id}',document.getElementById('ci_${id}').value)">✓</button>
+    <button class="btn btn-xs btn-gray" aria-label="Cancelar edición de clave" onclick="S.adminTab='lista';renderAdmin()">✗</button>`;
   var inp = document.getElementById('ci_' + id);
   if (inp) { inp.focus(); inp.select(); }
 }
