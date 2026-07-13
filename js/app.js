@@ -18,6 +18,7 @@ function render() {
     case 'selector':    renderSelector();    break;
     case 'gate':        renderGate();        break;
     case 'inicio':      renderInicio();      break;
+    case 'historial':   renderHistorial();   break;
     case 'registro':    renderRegistro();    break;
     case 'examen':      renderExamen();      break;
     case 'enviado':     renderEnviado();     break;

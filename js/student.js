@@ -78,8 +78,9 @@ async function renderInicio() {
     </div>
     <div style="width:64px;height:56px;opacity:.85">${gc.svg||''}</div>
   </div>
-  <div style="margin-bottom:10px">
+  <div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">
     <button class="btn btn-outline btn-sm" onclick="S.view='selector';render()">&#8592; Cambiar grado</button>
+    <button class="btn btn-outline btn-sm" onclick="S.view='historial';render()">📊 Mis exámenes</button>
   </div>
   <div class="card">`;
   if (!S.examenes.length) {
@@ -105,6 +106,57 @@ async function renderInicio() {
   }
   html += '</div>';
   document.getElementById('main-content').innerHTML = html;
+}
+
+// ── Mis exámenes (historial del estudiante) ────────────────────
+async function renderHistorial() {
+  document.getElementById('nav-sub').textContent = 'Mis exámenes';
+  var acceso = getAccesoGrado(S.gradoSeleccionado);
+  if (!acceso) { S.view = 'gate'; render(); return; }
+
+  var main = document.getElementById('main-content');
+  var backBtn = `<div style="margin-bottom:10px">
+    <button class="btn btn-outline btn-sm" onclick="S.view='inicio';render()">&#8592; Volver</button>
+  </div>`;
+  main.innerHTML = backBtn + `<div class="page-spinner"><div class="spinner"></div>Cargando tus exámenes...</div>`;
+
+  var data, error;
+  try {
+    ({ data, error } = await sb.rpc('mis_intentos', {
+      p_grado: S.gradoSeleccionado, p_seccion: acceso.seccion, p_numero_orden: acceso.numero_orden
+    }));
+  } catch (e) { error = e; }
+
+  if (error) {
+    main.innerHTML = backBtn + `<div class="warn-box">No se pudo cargar tu historial. Intenta de nuevo.</div>`;
+    return;
+  }
+
+  var intentos = data || [];
+  var html = backBtn + `<div class="card"><h2>Mis exámenes — ${esc(acceso.nombre)}</h2>`;
+
+  if (!intentos.length) {
+    html += `<div style="text-align:center;padding:30px 0;color:var(--sub)">
+      <div style="font-size:36px;margin-bottom:10px">📄</div>
+      <div>Todavía no enviaste ningún examen.</div>
+    </div>`;
+  } else {
+    intentos.forEach(it => {
+      var pendiente = !it.texto_revisado;
+      var pts = pendiente ? it.puntos_auto : it.puntos_total;
+      var fecha = (it.submitted_at || '').replace('T', ' ').substring(0, 16);
+      html += `<div class="exam-row">
+        <div class="exam-info">
+          <div class="exam-name">${esc(it.titulo)}${pendiente ? ' <span class="badge badge-am">pendiente*</span>' : ''}</div>
+          <div class="exam-meta">${esc(fecha)}</div>
+        </div>
+        <div style="text-align:right;font-weight:700;color:${pendiente ? 'var(--am)' : 'var(--ve)'}">${pts ?? 0} / ${it.puntos_maximo}</div>
+      </div>`;
+    });
+    html += `<div style="font-size:11px;color:var(--sub);margin-top:10px">* pendiente de corrección de preguntas de desarrollo por tu docente.</div>`;
+  }
+  html += '</div>';
+  main.innerHTML = html;
 }
 
 // ── Registro ──────────────────────────────────────────────────
