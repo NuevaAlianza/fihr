@@ -278,7 +278,7 @@ async function buscarRespuestas() {
   S._buscarResultados = resultados;
   if (!resultados.length) { cont.innerHTML = '<p style="color:var(--sub);text-align:center;padding:20px">Sin resultados.</p>'; return; }
 
-  cont.innerHTML = resultados.map((r, ri) => {
+  var filas = resultados.map((r, ri) => {
     var puntaje = r.puntos_total ?? r.puntos_auto ?? 0;
     var pct = r.puntos_maximo ? Math.round(puntaje / r.puntos_maximo * 100) : null;
     return `<div class="exam-row">
@@ -294,6 +294,42 @@ async function buscarRespuestas() {
       </div>
     </div>`;
   }).join('');
+
+  cont.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <span style="font-size:13px;color:var(--sub)">${resultados.length} resultado(s)</span>
+    <button class="btn btn-success btn-sm" onclick="exportarBusquedaExcel()">↓ Descargar Excel</button>
+  </div>${filas}`;
+}
+
+// ── Exportar respuestas crudas a Excel ──────────────────────────
+var ESTADO_LABEL = { correcta:'Correcta', incorrecta:'Incorrecta', parcial:'Parcial', manual:'Manual' };
+
+function exportarBusquedaExcel() {
+  var resultados = S._buscarResultados || [];
+  if (!resultados.length) { toast('No hay resultados para exportar'); return; }
+  var maxQs = resultados.reduce((m, r) => Math.max(m, (r.preguntas||[]).length), 0);
+  var h1 = ['Nombre','Orden','Seccion','Grado','Examen','Pts Auto','Pts Texto','Pts Total','Maximo','Revisado','Enviado'];
+  for (var i = 0; i < maxQs; i++) { h1.push('P'+(i+1)+' respuesta'); h1.push('P'+(i+1)+' estado'); }
+  var rows = [h1];
+  resultados.forEach(r => {
+    var row = [r.nombre, r.numero_orden, r.seccion, r.grado, r.examen_titulo,
+      r.puntos_auto??'—', r.puntos_texto??'—', r.puntos_total??'—', r.puntos_maximo??'—',
+      r.texto_revisado?'Si':'Pendiente', (r.submitted_at||'').replace('T',' ').substring(0,16)];
+    for (var i = 0; i < maxQs; i++) {
+      var p = (r.preguntas||[])[i];
+      if (!p || p.tipo === 'lectura') { row.push(''); row.push(''); continue; }
+      var val = p.respuesta_dada;
+      row.push(val==null?'':(typeof val==='object'?JSON.stringify(val):String(val)));
+      row.push(p.estado ? (ESTADO_LABEL[p.estado] || '') : '');
+    }
+    rows.push(row);
+  });
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = h1.map((_,i) => ({wch: i<11?18:22}));
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Busqueda');
+  XLSX.writeFile(wb, 'busqueda_respuestas_'+new Date().toISOString().substring(0,10)+'.xlsx');
+  toast('Excel descargado');
 }
 
 function _estadoBadge(estado) {
@@ -518,6 +554,20 @@ async function guardarRevision(respId, qIndices) {
   await verRespuestas(S.adminExamen.id);
 }
 
+// Estado (correcta/incorrecta/parcial/manual) de una pregunta a partir de
+// detalle_notas ya calculado por public_calificar_respuesta — no recalcula
+// la corrección, solo la interpreta (mismo criterio que admin_buscar_respuestas).
+function _estadoPreguntaLocal(q, detalleItem) {
+  if (!q || q.tipo === 'lectura') return '';
+  if (q.tipo === 'texto') return ESTADO_LABEL.manual;
+  var ptsMax = q.puntos || 0;
+  var pts = detalleItem ? detalleItem.pts : null;
+  if (pts == null || ptsMax === 0) return '';
+  if (pts >= ptsMax) return ESTADO_LABEL.correcta;
+  if (pts === 0) return ESTADO_LABEL.incorrecta;
+  return ESTADO_LABEL.parcial;
+}
+
 function descargarExcel() {
   var ex = S.adminExamen, qs = ex.preguntas||[], resps = S.respuestas;
   var wb = XLSX.utils.book_new();
@@ -527,7 +577,14 @@ function descargarExcel() {
   resps.forEach(r => {
     var pct = (r.puntos_maximo&&r.puntos_total!=null)?Math.round(r.puntos_total/r.puntos_maximo*100)+'%':'—';
     var row = [r.nombre,r.numero_orden,r.seccion,r.grado,r.puntos_auto??'—',r.puntos_texto??'—',r.puntos_total??'—',r.puntos_maximo??'—',pct,r.texto_revisado?'Si':'Pendiente',r.tiempo_usado_seg||0,(r.submitted_at||'').substring(0,16)];
-    qs.forEach((q, qi) => { if (q.tipo === 'lectura') return; var v = r.respuestas[qi]; row.push(v===undefined?'':(typeof v==='object'?JSON.stringify(v):String(v))); });
+    qs.forEach((q, qi) => {
+      if (q.tipo === 'lectura') return;
+      var v = r.respuestas[qi];
+      var valTxt = v===undefined?'':(typeof v==='object'?JSON.stringify(v):String(v));
+      var detalleItem = (r.detalle_notas||[]).find(d => d.qi === qi);
+      var estado = _estadoPreguntaLocal(q, detalleItem);
+      row.push(estado ? valTxt+' ['+estado+']' : valTxt);
+    });
     rows.push(row);
   });
   var ws1 = XLSX.utils.aoa_to_sheet(rows); ws1['!cols'] = h1.map((_,i) => ({wch:i<6?16:45}));
