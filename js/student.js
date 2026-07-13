@@ -224,6 +224,11 @@ function verificarSeccion() {
 
 // Lookup automático cuando el estudiante ingresa número + sección
 var _lookupTimer = null;
+// Último orden+sección ya resuelto — evita que un input/change duplicado
+// (ej. el 'change' que dispara un <input type=number> al perder el foco
+// cuando se hace clic en "Sí, soy yo") vuelva a disparar la búsqueda y
+// pise la confirmación ya mostrada con un "Buscando..." nuevo.
+var _lastLookup = null;
 function buscarEstudiante() {
   if (!S.examen || !S.examen.validar_lista) return;
   clearTimeout(_lookupTimer);
@@ -240,10 +245,14 @@ async function _doLookup() {
   if (errEl) errEl.style.display = 'none';
 
   if (!orden || !seccion) {
+    _lastLookup = null;
     box.style.display = 'none';
     btnCom.style.display = 'none';
     return;
   }
+
+  if (_lastLookup && _lastLookup.orden === orden && _lastLookup.seccion === seccion) return;
+  _lastLookup = { orden: orden, seccion: seccion };
 
   box.style.display = 'block';
   box.innerHTML = `<div style="color:#888;font-size:13px;padding:10px 0">🔍 Buscando...</div>`;
@@ -275,28 +284,95 @@ async function _doLookup() {
       <div style="font-size:18px;font-weight:700;color:#1B3A6B;margin-bottom:14px">${esc(nombre)}</div>
       <div style="display:flex;gap:10px;justify-content:center">
         <button class="btn btn-primary" style="min-width:100px"
-          onclick="confirmarNombre('${esc(nombre).replace(/'/g,"\\'")}')">✓ Sí, soy yo</button>
+          onclick="confirmarNombre('${esc(nombre).replace(/'/g,"\\'")}',${orden},'${seccion}')">✓ Sí, soy yo</button>
         <button class="btn btn-outline" style="min-width:100px"
           onclick="rechazarNombre()">✗ No soy yo</button>
       </div>
     </div>`;
 }
 
-// La identidad y la clave del estudiante ya fueron verificadas server-side
-// por el gate de acceso al grado (verificar_acceso_grado) antes de poder
-// llegar a esta pantalla — aquí solo confirmamos el nombre encontrado.
-function confirmarNombre(nombre) {
+// El gate de acceso al grado (verificar_acceso_grado) ya probó la clave de
+// LA identidad con la que se desbloqueó el grado — pero acá el estudiante
+// puede haber tipeado un número de orden/sección distinto (ej. el de un
+// compañero). Si coincide con la identidad ya verificada en esta sesión,
+// no volvemos a pedir clave; si no coincide, pedimos la clave de ESE
+// estudiante puntual y la verificamos con la misma RPC server-side.
+function confirmarNombre(nombre, orden, seccion) {
   S._nombreConfirmado = nombre;
   var box = document.getElementById('nombre-lookup');
+  var acceso = getAccesoGrado(S.gradoSeleccionado);
+  var yaVerificado = acceso && acceso.seccion === seccion && acceso.numero_orden === orden;
+
+  if (yaVerificado) {
+    box.innerHTML = `
+      <div style="border:2px solid #1B5E20;border-radius:10px;padding:12px 16px;background:#E8F5E9;display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">✓</span>
+        <div>
+          <div style="font-size:13px;color:#555">Identificado como:</div>
+          <div style="font-size:15px;font-weight:700;color:#1B5E20">${esc(nombre)}</div>
+        </div>
+        <button class="btn btn-xs btn-gray" style="margin-left:auto" onclick="rehacerLookup()">Cambiar</button>
+      </div>`;
+    document.getElementById('btn-comenzar').style.display = 'inline-flex';
+    return;
+  }
+
   box.innerHTML = `
-    <div style="border:2px solid #1B5E20;border-radius:10px;padding:12px 16px;background:#E8F5E9;display:flex;align-items:center;gap:10px">
-      <span style="font-size:20px">✓</span>
-      <div>
-        <div style="font-size:13px;color:#555">Identificado como:</div>
-        <div style="font-size:15px;font-weight:700;color:#1B5E20">${esc(nombre)}</div>
+    <div style="border:2px solid #1B3A6B;border-radius:10px;padding:16px;background:#EEF5FF">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div>
+          <div style="font-size:13px;color:#555">Identificado como:</div>
+          <div style="font-size:15px;font-weight:700;color:#1B3A6B">${esc(nombre)}</div>
+        </div>
+        <button class="btn btn-xs btn-gray" style="margin-left:auto" onclick="rehacerLookup()">Cambiar</button>
       </div>
-      <button class="btn btn-xs btn-gray" style="margin-left:auto" onclick="rehacerLookup()">Cambiar</button>
+      <label style="font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Ingresa la clave personal de ${esc(nombre)}</label>
+      <input type="text" id="clave-input" maxlength="8" placeholder="——————"
+        style="text-transform:uppercase;letter-spacing:4px;font-weight:700;font-size:20px;text-align:center;margin-top:0"
+        autocomplete="off">
+      <div id="clave-error" style="display:none;color:#B71C1C;font-size:12px;margin-top:6px"></div>
+      <button class="btn btn-primary" id="clave-btn" style="width:100%;margin-top:10px">Verificar</button>
     </div>`;
+  var ci = document.getElementById('clave-input');
+  if (ci) {
+    secureEl(ci);
+    ci.focus();
+    ci.addEventListener('keydown', e => { if (e.key === 'Enter') _verificarClaveExamen(orden, seccion); });
+  }
+  document.getElementById('clave-btn').addEventListener('click', () => _verificarClaveExamen(orden, seccion));
+}
+
+// Verifica la clave de un estudiante puntual (distinto al que desbloqueó
+// el grado) contra la misma RPC verificar_acceso_grado — nunca compara
+// la clave real en el cliente.
+async function _verificarClaveExamen(orden, seccion) {
+  var input = document.getElementById('clave-input');
+  var errEl = document.getElementById('clave-error');
+  var btn   = document.getElementById('clave-btn');
+  var clave = (input?.value || '').trim();
+  if (!clave) { errEl.style.display = 'block'; errEl.textContent = 'Ingresa la clave.'; return; }
+
+  btn.disabled = true; btn.textContent = 'Verificando...';
+  var data, error;
+  try {
+    ({ data, error } = await sb.rpc('verificar_acceso_grado', {
+      p_grado: S.gradoSeleccionado, p_seccion: seccion, p_numero_orden: orden, p_clave: clave
+    }));
+  } catch (e) { error = e; }
+  btn.disabled = false; btn.textContent = 'Verificar';
+
+  if (error || !data || !data.ok) {
+    var msgs = {
+      sin_clave_asignada: 'Este estudiante no tiene clave asignada. Consulta a tu docente.',
+      clave_incorrecta: 'Clave incorrecta. Verifica con tu docente.',
+      no_encontrado: 'No se encontró ese estudiante.'
+    };
+    errEl.style.display = 'block';
+    errEl.textContent = (data && msgs[data.error]) || 'Error de conexión. Intenta de nuevo.';
+    return;
+  }
+
+  errEl.style.display = 'none';
   document.getElementById('btn-comenzar').style.display = 'inline-flex';
 }
 
