@@ -83,7 +83,7 @@ CREATE OR REPLACE FUNCTION admin_login(p_pin TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
   v_pin_hash_real TEXT;
@@ -106,16 +106,22 @@ BEGIN
 
   IF v_pin_hash_real IS NOT NULL AND v_hash = v_pin_hash_real THEN
     v_token := encode(gen_random_bytes(32), 'hex');
+    -- WHERE true: admin_config es tabla de una sola fila, pero Supabase
+    -- bloquea UPDATE sin WHERE (pg_safeupdate)
     UPDATE admin_config
-    SET pin_hash = v_token, failed_attempts = 0, locked_until = NULL;
+    SET pin_hash = v_token, failed_attempts = 0, locked_until = NULL
+    WHERE true;
     RETURN jsonb_build_object('ok', true, 'token', v_token);
   END IF;
 
+  -- WHERE true: admin_config es tabla de una sola fila, pero Supabase
+  -- bloquea UPDATE sin WHERE (pg_safeupdate)
   UPDATE admin_config
   SET failed_attempts = failed_attempts + 1,
       locked_until = CASE WHEN failed_attempts + 1 >= 5
                           THEN NOW() + INTERVAL '30 seconds'
                           ELSE locked_until END
+  WHERE true
   RETURNING failed_attempts INTO v_intentos;
 
   IF v_intentos >= 5 THEN
@@ -163,6 +169,7 @@ CREATE OR REPLACE FUNCTION admin_logout(p_pin_hash TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, extensions
 AS $$
 DECLARE v_hash TEXT;
 BEGIN
@@ -170,7 +177,10 @@ BEGIN
   IF v_hash IS NULL OR v_hash <> p_pin_hash THEN
     RETURN jsonb_build_object('error', 'No autorizado');
   END IF;
-  UPDATE admin_config SET pin_hash = encode(gen_random_bytes(32), 'hex');
+  -- WHERE true: admin_config es tabla de una sola fila, pero Supabase
+  -- bloquea UPDATE sin WHERE (pg_safeupdate)
+  UPDATE admin_config SET pin_hash = encode(gen_random_bytes(32), 'hex')
+  WHERE true;
   RETURN jsonb_build_object('ok', true);
 END;
 $$;
@@ -197,4 +207,10 @@ GRANT EXECUTE ON FUNCTION admin_logout(TEXT) TO anon, authenticated;
 --
 --   4. Revisar manualmente en el dashboard (Authentication → Policies)
 --      las políticas RLS de `examenes` y `estudiantes_lista`.
+--
+-- NOTA: si al crear otra función admin_* con UPDATE aparece el error
+-- "UPDATE requires a WHERE clause" (protección pg_safeupdate de
+-- Supabase), el fix es el mismo patrón usado arriba en admin_login/
+-- admin_logout: agregar "WHERE true" al UPDATE cuando la tabla es de
+-- una sola fila y no hay una columna real por la cual filtrar.
 -- =============================================================
