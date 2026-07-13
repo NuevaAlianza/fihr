@@ -5,7 +5,7 @@ var S = {
   examenes: [], examen: null,
   gradoSeleccionado: null,
   est: { nombre:'', orden:0, grado:'', seccion:'', codigo:'' },
-  resp: {}, ordenItems: {},
+  resp: {}, ordenItems: {}, ultimoResultado: null,
   timerSec: 0, timerStart: 0, timerInterval: null,
   adminAuth: false, adminTab: 'examenes',
   adminExamen: null, respuestas: [], listaEst: [],

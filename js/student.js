@@ -841,6 +841,12 @@ async function submitExamen(auto) {
     var respId = rpcData?.id || null;
     (async function() { try { await sb.rpc('public_registrar_cambios_pestana', { p_respuesta_id: respId, p_cambios: S.cambiosPestana }); } catch(e) {} })();
   }
+  S.ultimoResultado = {
+    pts_auto: calData.pts_auto,
+    pts_max: calData.pts_max,
+    tiene_texto: calData.tiene_texto,
+    num_pendientes: (calData.detalle || []).filter(d => d.pendiente).length
+  };
   S.view = 'enviado'; render();
 }
 
@@ -869,6 +875,14 @@ async function reintentarSubmit() {
 }
 
 function renderEnviado() {
+  var res = S.ultimoResultado;
+  var puntajeHtml = '';
+  if (res) {
+    puntajeHtml = `<div class="success-box" style="display:inline-block;text-align:left;margin-top:12px">
+      <div style="font-size:15px;font-weight:700;color:#1B3A6B">Puntaje automático: ${res.pts_auto} / ${res.pts_max}</div>
+      ${res.tiene_texto ? `<div style="font-size:12px;color:var(--am);margin-top:6px">📝 ${res.num_pendientes} pregunta(s) de desarrollo pendiente(s) de corrección — este puntaje puede aumentar cuando tu docente las revise.</div>` : ''}
+    </div>`;
+  }
   document.getElementById('main-content').innerHTML = `
   <div class="card enviado-box">
     <div class="enviado-icon">✓</div>
@@ -879,6 +893,7 @@ function renderEnviado() {
       <div><strong>Grado/Sección:</strong> ${esc(S.est.grado)} — ${esc(S.est.seccion)} · Orden: ${S.est.orden}</div>
       ${S.est.codigo ? `<div style="margin-top:6px;font-size:12px;color:#555">Código de inicio: <span style="font-family:monospace;font-weight:700">${S.est.codigo}</span></div>` : ''}
     </div>
+    ${puntajeHtml}
     <div style="margin-top:20px">
       <button class="btn btn-outline" onclick="S.view='inicio';render()">Ver más exámenes</button>
     </div>
