@@ -582,12 +582,7 @@ function renderPregunta(q, i) {
       break;
     case 'ordenar':
       var items = S.ordenItems[i] || q.items || [];
-      inner = `<div class="orden-list" id="ord_${i}">` + items.map((it, ii) =>
-        `<div class="orden-item" draggable="true" data-q="${i}" data-ii="${ii}">
-          <span class="orden-handle">☰</span>
-          <div class="orden-pos">${ii+1}</div>
-          <span>${esc(it)}</span>
-        </div>`).join('') + '</div>';
+      inner = renderOrdenList(i, items);
       break;
     case 'escala':
       var lbs = q.etiquetas || ['1','2','3','4','5'];
@@ -617,32 +612,94 @@ function _backupResp() {
   try { sessionStorage.setItem('sca_resp_backup', JSON.stringify({ examen_id: S.examen.id, resp: S.resp })); } catch(e) {}
 }
 
+// Renderiza la lista de "ordenar": cada item lleva data-idx = su posición
+// ACTUAL dentro de `items` al momento de este render. Ese índice se usa
+// para reconstruir el orden final tras un arrastre (los nodos se mueven
+// en el DOM sin tocar sus atributos).
+function renderOrdenList(qi, items) {
+  return `<div class="orden-list" id="ord_${qi}">` + items.map((it, ii) =>
+    `<div class="orden-item" data-q="${qi}" data-idx="${ii}">
+      <span class="orden-handle" aria-label="Arrastrar para reordenar">☰</span>
+      <div class="orden-pos">${ii+1}</div>
+      <span class="orden-texto">${esc(it)}</span>
+      <div class="orden-btns">
+        <button type="button" class="orden-btn" aria-label="Mover arriba" ${ii===0?'disabled':''} onclick="moverOrden(${qi},${ii},-1)">&#8593;</button>
+        <button type="button" class="orden-btn" aria-label="Mover abajo" ${ii===items.length-1?'disabled':''} onclick="moverOrden(${qi},${ii},1)">&#8595;</button>
+      </div>
+    </div>`).join('') + '</div>';
+}
+
+// Respaldo por teclado/click: mueve el item en la posición `ii` un lugar
+// arriba o abajo (dir = -1 / 1). Funciona sin arrastrar nada.
+function moverOrden(qi, ii, dir) {
+  var arr = [...S.ordenItems[qi]];
+  var ti = ii + dir;
+  if (ti < 0 || ti >= arr.length) return;
+  var tmp = arr[ii]; arr[ii] = arr[ti]; arr[ti] = tmp;
+  S.ordenItems[qi] = arr; S.resp[qi] = [...arr];
+  _backupResp();
+  var list = document.getElementById('ord_' + qi);
+  if (list) { list.outerHTML = renderOrdenList(qi, arr); initDragList(qi); }
+}
+
+// Arrastre vía Pointer Events (funciona con mouse, touch y stylus —
+// a diferencia del Drag & Drop HTML5 nativo, que no dispara en touch).
 function initDrag() {
   document.querySelectorAll('.orden-list').forEach(list => {
-    var qi = parseInt(list.id.split('_')[1]);
-    var src = null;
-    list.querySelectorAll('.orden-item').forEach(item => {
-      item.addEventListener('dragstart', e => { src = item; item.classList.add('dragging'); });
-      item.addEventListener('dragend',   () => item.classList.remove('dragging'));
-      item.addEventListener('dragover',  e => { e.preventDefault(); item.classList.add('dragover'); });
-      item.addEventListener('dragleave', () => item.classList.remove('dragover'));
-      item.addEventListener('drop', e => {
-        e.preventDefault(); item.classList.remove('dragover');
-        if (!src || src === item) return;
-        var items = Array.from(list.querySelectorAll('.orden-item'));
-        var fi = items.indexOf(src), ti = items.indexOf(item);
-        var arr = [...S.ordenItems[qi]];
-        var [mv] = arr.splice(fi, 1); arr.splice(ti, 0, mv);
-        S.ordenItems[qi] = arr; S.resp[qi] = [...arr];
-        list.innerHTML = arr.map((it, ii) =>
-          `<div class="orden-item" style="border-color:var(--ve)" draggable="true" data-q="${qi}" data-ii="${ii}">
-            <span class="orden-handle">☰</span>
-            <div class="orden-pos">${ii+1}</div><span>${esc(it)}</span>
-          </div>`).join('');
-        initDrag();
-      });
+    initDragList(parseInt(list.id.split('_')[1]));
+  });
+}
+
+function initDragList(qi) {
+  var list = document.getElementById('ord_' + qi);
+  if (!list) return;
+  var dragEl = null;
+
+  list.querySelectorAll('.orden-handle').forEach(handle => {
+    handle.addEventListener('pointerdown', e => {
+      dragEl = handle.closest('.orden-item');
+      dragEl.classList.add('dragging');
+      try { handle.setPointerCapture(e.pointerId); } catch(err) {}
+      e.preventDefault();
     });
   });
+
+  list.addEventListener('pointermove', e => {
+    if (!dragEl) return;
+    e.preventDefault();
+    var after = _ordenAfterElement(list, e.clientY);
+    if (after == null) list.appendChild(dragEl);
+    else if (after !== dragEl) list.insertBefore(dragEl, after);
+  });
+
+  function finishDrag() {
+    if (!dragEl) return;
+    dragEl.classList.remove('dragging');
+    dragEl = null;
+    _commitOrdenDom(qi, list);
+  }
+  list.addEventListener('pointerup', finishDrag);
+  list.addEventListener('pointercancel', finishDrag);
+}
+
+function _ordenAfterElement(list, y) {
+  var items = Array.from(list.querySelectorAll('.orden-item:not(.dragging)'));
+  var closest = null, closestOffset = -Infinity;
+  items.forEach(child => {
+    var box = child.getBoundingClientRect();
+    var offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closestOffset) { closestOffset = offset; closest = child; }
+  });
+  return closest;
+}
+
+function _commitOrdenDom(qi, list) {
+  var base = S.ordenItems[qi];
+  var order = Array.from(list.querySelectorAll('.orden-item')).map(el => base[parseInt(el.dataset.idx)]);
+  S.ordenItems[qi] = order; S.resp[qi] = [...order];
+  _backupResp();
+  list.outerHTML = renderOrdenList(qi, order);
+  initDragList(qi);
 }
 
 function normText(s) {

@@ -520,16 +520,21 @@ textarea { resize: vertical; min-height: 84px; }
   border: 1.5px solid var(--brd);
   border-radius: var(--radius-sm);
   background: #fff;
-  cursor: grab;
   user-select: none;
-  transition: all .15s;
+  transition: border-color .15s, background .15s, opacity .15s;
   font-size: 14px;
 }
 
 .orden-item:hover   { border-color: var(--az); background: var(--az2); }
 .orden-item.dragging { opacity: .35; border-style: dashed; }
-.orden-item.dragover { border-color: var(--ve); background: var(--ve2); }
-.orden-handle { color: #CBD5E1; font-size: 16px; }
+.orden-handle {
+  color: #CBD5E1;
+  font-size: 18px;
+  cursor: grab;
+  touch-action: none;
+  padding: 4px;
+}
+.orden-handle:active { cursor: grabbing; }
 
 .orden-pos {
   width: 24px;
@@ -544,6 +549,27 @@ textarea { resize: vertical; min-height: 84px; }
   justify-content: center;
   flex-shrink: 0;
 }
+
+.orden-texto { flex: 1; }
+
+.orden-btns { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+
+.orden-btn {
+  width: 26px;
+  height: 22px;
+  border: 1px solid var(--brd);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--az);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.orden-btn:hover:not(:disabled) { border-color: var(--az); background: var(--az2); }
+.orden-btn:disabled { opacity: .3; cursor: default; }
 
 /* ── ESCALA ──────────────────────────────────────────────────── */
 .escala-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
