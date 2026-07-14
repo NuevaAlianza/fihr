@@ -10,9 +10,52 @@
 // resultado ya validado en sessionStorage.
 var ACCESO_SECCIONES = ['A', 'B', 'C', 'D', 'E'];
 
+// Expiración por inactividad — importante porque en la escuela varios
+// estudiantes pueden compartir el mismo dispositivo sin cerrar la pestaña
+// entre uno y otro. No es un límite de sesión fijo: se reinicia con
+// cualquier clic o tecla (ver el listener más abajo), así que un estudiante
+// activo no se desloguea a mitad de un examen.
+var ACCESO_INACTIVIDAD_MS = 20 * 60 * 1000; // 20 minutos
+
 function _accesoKey(grado) { return 'sca_acceso_' + grado; }
 
+// Borra todo acceso ya verificado (todos los grados) — usado tanto por el
+// botón de "Cerrar sesión" como por la expiración por inactividad.
+function limpiarTodoAcceso() {
+  try {
+    Object.keys(sessionStorage).forEach(function(k) {
+      if (k.indexOf('sca_acceso_') === 0) sessionStorage.removeItem(k);
+    });
+    sessionStorage.removeItem('sca_ultima_actividad');
+  } catch (e) {}
+}
+
+function _marcarActividad() {
+  try { sessionStorage.setItem('sca_ultima_actividad', String(Date.now())); } catch (e) {}
+}
+
+function _sesionExpiradaPorInactividad() {
+  try {
+    var last = parseInt(sessionStorage.getItem('sca_ultima_actividad'), 10);
+    if (!last) return false; // todavía no se verificó nada en esta sesión
+    return (Date.now() - last) > ACCESO_INACTIVIDAD_MS;
+  } catch (e) { return false; }
+}
+
+// Marca actividad en cualquier clic o tecla (throttled a 1 vez cada 5s
+// para no escribir en sessionStorage en cada evento).
+(function() {
+  var ultimoMarcado = 0;
+  function marcar() {
+    var now = Date.now();
+    if (now - ultimoMarcado > 5000) { ultimoMarcado = now; _marcarActividad(); }
+  }
+  document.addEventListener('click', marcar);
+  document.addEventListener('keydown', marcar);
+})();
+
 function getAccesoGrado(grado) {
+  if (_sesionExpiradaPorInactividad()) { limpiarTodoAcceso(); return null; }
   try {
     var raw = sessionStorage.getItem(_accesoKey(grado));
     return raw ? JSON.parse(raw) : null;
@@ -21,6 +64,7 @@ function getAccesoGrado(grado) {
 
 function setAccesoGrado(grado, data) {
   try { sessionStorage.setItem(_accesoKey(grado), JSON.stringify(data)); } catch (e) {}
+  _marcarActividad();
 }
 
 // Renderiza el formulario de acceso dentro de `el`. Llama a

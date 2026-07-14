@@ -46,6 +46,16 @@ function seleccionarGrado(nivel) {
   render();
 }
 
+// Cierra el acceso verificado de TODOS los grados (no solo el actual) —
+// pensado para dispositivos compartidos entre varios estudiantes.
+function cerrarSesionEstudiante() {
+  limpiarTodoAcceso();
+  S.gradoSeleccionado = null;
+  S.view = 'selector';
+  toast('Sesión cerrada');
+  render();
+}
+
 // ── Gate de clave (obligatorio antes de ver exámenes de un grado) ──
 function renderGate() {
   document.getElementById('nav-sub').textContent = S.gradoSeleccionado || '';

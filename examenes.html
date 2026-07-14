@@ -56,6 +56,7 @@ function showCopyToast(){
         <button class="btn-ghost active" onclick="openAdmin()">⚙️ Admin</button>
         <button class="btn-ghost" onclick="cerrarSesionAdmin()" aria-label="Cerrar sesión admin">✕</button>
       </div>
+      <button class="btn-ghost" onclick="cerrarSesionAlumno()" title="Cierra el acceso verificado y vuelve a pedir clave — útil si compartís el dispositivo">🔒 Salir</button>
       <button class="btn-ghost" id="btn-admin-ghost" onclick="openAdmin()">🔒</button>
     </div>
   </div>
@@ -216,6 +217,14 @@ function updateURL(){
   u.searchParams.set('grado',state.grado);
   u.searchParams.set('periodo',state.periodo);
   history.replaceState({},'',u);
+}
+
+// Cierra el acceso verificado de TODOS los grados (no solo el actual) —
+// pensado para dispositivos compartidos entre varios estudiantes.
+function cerrarSesionAlumno(){
+  limpiarTodoAcceso();
+  showToast('Sesión cerrada');
+  loadSemanas();
 }
 
 // ══════════════════════════════════════════════════════════════════
