@@ -8,6 +8,12 @@
 // (SECURITY DEFINER) — este archivo nunca lee ni compara la clave
 // del estudiante en el cliente, solo llama al RPC y guarda el
 // resultado ya validado en sessionStorage.
+//
+// Solo un grado puede tener acceso activo a la vez por pestaña —
+// ver setAccesoGrado() más abajo. Pensado para PCs compartidas de
+// la escuela: si un estudiante verifica su grado y después otro usa
+// la misma pestaña para verificar el suyo, el primero queda
+// invalidado en vez de quedar acumulado.
 var ACCESO_SECCIONES = ['A', 'B', 'C', 'D', 'E'];
 
 // Expiración por inactividad — importante porque en la escuela varios
@@ -62,8 +68,22 @@ function getAccesoGrado(grado) {
   } catch (e) { return null; }
 }
 
+// Solo puede haber UN grado con acceso activo a la vez por pestaña/
+// dispositivo — al verificar un grado nuevo se borra el acceso de
+// cualquier otro. Esto importa en una PC compartida de la escuela:
+// si el estudiante A verifica 6to y después el estudiante B usa la
+// misma pestaña para verificar 2do, el acceso de A a 6to debe quedar
+// invalidado — si no, cualquiera de los dos podría volver al otro
+// grado sin que se le pida clave de nuevo.
 function setAccesoGrado(grado, data) {
-  try { sessionStorage.setItem(_accesoKey(grado), JSON.stringify(data)); } catch (e) {}
+  try {
+    Object.keys(sessionStorage).forEach(function(k) {
+      if (k.indexOf('sca_acceso_') === 0 && k !== _accesoKey(grado)) {
+        sessionStorage.removeItem(k);
+      }
+    });
+    sessionStorage.setItem(_accesoKey(grado), JSON.stringify(data));
+  } catch (e) {}
   _marcarActividad();
 }
 
